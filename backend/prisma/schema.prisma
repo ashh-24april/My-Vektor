@@ -1,0 +1,491 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Rol {
+  id_rol      Int          @id @default(autoincrement())
+  nombre      String       @unique @db.VarChar(50)
+  descripcion String?
+  usuarios    Usuario[]
+  permisos    RolPermiso[]
+
+  @@map("rol")
+}
+
+model Usuario {
+  id_usuario            Int                    @id @default(autoincrement())
+  nombre                String                 @db.VarChar(100)
+  usuario               String                 @unique @db.VarChar(50)
+  correo                String                 @unique @db.VarChar(150)
+  correo_recuperacion   String?                @db.VarChar(150)
+  telefono              String?                @db.VarChar(20)
+  contrasena            String                 @db.VarChar(255)
+  id_rol                Int
+  activo                Boolean                @default(true)
+  en_linea              Boolean                @default(false)
+  ultima_conexion       DateTime?              @db.Timestamp(6)
+  permitir_cambio_password Boolean             @default(true)
+  ultimo_cambio_password DateTime?             @default(now()) @db.Timestamp(6)
+  intentos_fallidos     Int                    @default(0)
+  max_intentos_fallidos Int                    @default(5)
+  dias_cambio_password  Int                    @default(90)
+  foto_url              String?
+  created_at            DateTime               @default(now()) @db.Timestamp(6)
+  updated_at            DateTime               @default(now()) @db.Timestamp(6)
+  rol                   Rol                    @relation(fields: [id_rol], references: [id_rol])
+  auditorias            Auditoria[]
+  movimientos_inventario MovimientoInventario[]
+  compras               Compra[]
+  ordenes_servicio      OrdenServicio[]
+  viajes                Viaje[]
+  gastos                Gasto[]
+  ventas                Venta[]
+  notificaciones        Notificacion[]
+  refresh_tokens        RefreshToken[]
+  reset_tokens          PasswordResetToken[]
+  permisos_modulos      UsuarioPermisoModulo[]
+
+  @@index([id_rol], map: "idx_usuario_rol")
+  @@index([correo], map: "idx_usuario_correo")
+  @@map("usuario")
+}
+
+model UsuarioPermisoModulo {
+  id_usuario Int
+  modulo     String  @db.VarChar(50)
+  permitido  Boolean @default(true)
+  usuario    Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@id([id_usuario, modulo])
+  @@map("usuario_permiso_modulo")
+}
+
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  token_hash String   @unique @db.VarChar(255)
+  id_usuario Int
+  usuario    Usuario  @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  expira_en  DateTime @db.Timestamp(6)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("refresh_token")
+}
+
+model Auditoria {
+  id_auditoria Int      @id @default(autoincrement())
+  id_usuario   Int
+  accion       String   @db.VarChar(100)
+  modulo       String   @db.VarChar(50)
+  descripcion  String?
+  ip_origen    String?  @db.VarChar(45)
+  fecha_hora   DateTime @default(now()) @db.Timestamp(6)
+  usuario      Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+
+  @@index([id_usuario], map: "idx_auditoria_usuario")
+  @@index([fecha_hora], map: "idx_auditoria_fecha")
+  @@map("auditoria")
+}
+
+model Vehiculo {
+  id_vehiculo      Int                 @id @default(autoincrement())
+  placa            String              @unique @db.VarChar(20)
+  marca            String              @db.VarChar(80)
+  modelo           String              @db.VarChar(80)
+  anio             Int
+  tipo             String?             @db.VarChar(50)
+  color            String?             @db.VarChar(30)
+  num_motor        String?             @db.VarChar(50)
+  num_chasis       String?             @db.VarChar(50)
+  capacidad_carga  Decimal?            @db.Decimal(10, 2)
+  kilometraje      Int                 @default(0)
+  rendimiento_km_l Decimal?            @db.Decimal(5, 2)
+  estado           String              @default("Disponible") @db.VarChar(30)
+  activo           Boolean             @default(true)
+  foto_url         String?
+  created_at       DateTime            @default(now()) @db.Timestamp(6)
+  updated_at       DateTime            @default(now()) @db.Timestamp(6)
+  documentos       DocumentoVehiculo[]
+  ordenes_servicio OrdenServicio[]
+  viajes           Viaje[]
+
+  @@map("vehiculo")
+}
+
+model DocumentoVehiculo {
+  id_documento      Int      @id @default(autoincrement())
+  id_vehiculo       Int
+  tipo_documento    String   @db.VarChar(80)
+  numero            String?  @db.VarChar(50)
+  fecha_emision     DateTime? @db.Date
+  fecha_vencimiento DateTime @db.Date
+  url_archivo       String?
+  alerta_enviada    Boolean  @default(false)
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+  vehiculo          Vehiculo @relation(fields: [id_vehiculo], references: [id_vehiculo])
+
+  @@index([id_vehiculo], map: "idx_docveh_vehiculo")
+  @@index([fecha_vencimiento], map: "idx_docveh_vencimiento")
+  @@map("documento_vehiculo")
+}
+
+model Piloto {
+  id_piloto      Int      @id @default(autoincrement())
+  nombre         String   @db.VarChar(100)
+  apellido       String   @db.VarChar(100)
+  dpi            String   @unique @db.VarChar(20)
+  telefono       String?  @db.VarChar(20)
+  correo         String?  @db.VarChar(150)
+  num_licencia   String   @unique @db.VarChar(30)
+  tipo_licencia  String   @db.VarChar(10)
+  venc_licencia  DateTime @db.Date
+  alerta_enviada Boolean  @default(false)
+  disponible     Boolean  @default(true)
+  activo         Boolean  @default(true)
+  foto_url       String?
+  foto_dpi_url   String?
+  foto_lic_url   String?
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+  updated_at     DateTime @default(now()) @db.Timestamp(6)
+  viajes         Viaje[]
+
+  @@index([num_licencia], map: "idx_piloto_licencia")
+  @@index([venc_licencia], map: "idx_piloto_vencimiento")
+  @@map("piloto")
+}
+
+model Mecanico {
+  id_mecanico  Int             @id @default(autoincrement())
+  nombre       String          @db.VarChar(100)
+  apellido     String          @db.VarChar(100)
+  dpi          String          @unique @db.VarChar(20)
+  telefono     String?         @db.VarChar(20)
+  especialidad String?         @db.VarChar(100)
+  activo       Boolean         @default(true)
+  foto_url     String?
+  foto_dpi_url String?
+  created_at   DateTime        @default(now()) @db.Timestamp(6)
+  updated_at   DateTime        @default(now()) @db.Timestamp(6)
+  ordenes_servicio OrdenServicio[]
+
+  @@map("mecanico")
+}
+
+model Cliente {
+  id_cliente  Int             @id @default(autoincrement())
+  nombre      String          @db.VarChar(150)
+  nit         String?         @db.VarChar(20)
+  telefono    String?         @db.VarChar(20)
+  correo      String?         @db.VarChar(150)
+  direccion   String?
+  tipo        String          @default("Externo") @db.VarChar(20)
+  activo      Boolean         @default(true)
+  created_at  DateTime        @default(now()) @db.Timestamp(6)
+  updated_at  DateTime        @default(now()) @db.Timestamp(6)
+  ordenes_servicio OrdenServicio[]
+  viajes      Viaje[]
+  ventas      Venta[]
+
+  @@map("cliente")
+}
+
+model Proveedor {
+  id_proveedor  Int                 @id @default(autoincrement())
+  nombre        String              @db.VarChar(150)
+  nit           String?             @db.VarChar(20)
+  telefono      String?             @db.VarChar(20)
+  correo        String?             @db.VarChar(150)
+  direccion     String?
+  tipo_producto String?
+  activo        Boolean             @default(true)
+  created_at    DateTime            @default(now()) @db.Timestamp(6)
+  updated_at    DateTime            @default(now()) @db.Timestamp(6)
+  contactos     ContactoProveedor[]
+  productos     Producto[]
+  compras       Compra[]
+
+  @@map("proveedor")
+}
+
+model ContactoProveedor {
+  id_contacto  Int       @id @default(autoincrement())
+  id_proveedor Int
+  nombre       String    @db.VarChar(100)
+  cargo        String?   @db.VarChar(80)
+  telefono     String?   @db.VarChar(20)
+  correo       String?   @db.VarChar(150)
+  proveedor    Proveedor @relation(fields: [id_proveedor], references: [id_proveedor])
+
+  @@map("contacto_proveedor")
+}
+
+model Categoria {
+  id_categoria Int        @id @default(autoincrement())
+  nombre       String     @unique @db.VarChar(80)
+  descripcion  String?
+  productos    Producto[]
+
+  @@map("categoria")
+}
+
+model Producto {
+  id_producto            Int                   @id @default(autoincrement())
+  codigo                 String                @unique @db.VarChar(50)
+  descripcion            String                @db.VarChar(200)
+  id_categoria           Int
+  id_proveedor           Int?
+  ubicacion              String?               @db.VarChar(80)
+  unidad_medida          String                @default("Unidad") @db.VarChar(20)
+  stock                  Int                   @default(0)
+  stock_minimo           Int                   @default(0)
+  precio_compra          Decimal               @default(0) @db.Decimal(10, 2)
+  precio_venta           Decimal               @default(0) @db.Decimal(10, 2)
+  activo                 Boolean               @default(true)
+  foto_url               String?
+  created_at             DateTime              @default(now()) @db.Timestamp(6)
+  updated_at             DateTime              @default(now()) @db.Timestamp(6)
+  categoria              Categoria             @relation(fields: [id_categoria], references: [id_categoria])
+  proveedor              Proveedor?            @relation(fields: [id_proveedor], references: [id_proveedor])
+  movimientos_inventario MovimientoInventario[]
+  detalles_compra        DetalleCompra[]
+  ordenes_repuesto       OrdenRepuesto[]
+  detalles_venta         DetalleVenta[]
+
+  @@index([codigo], map: "idx_producto_codigo")
+  @@index([id_categoria], map: "idx_producto_categoria")
+  @@index([id_proveedor], map: "idx_producto_proveedor")
+  @@map("producto")
+}
+
+model MovimientoInventario {
+  id_movimiento Int      @id @default(autoincrement())
+  id_producto   Int
+  id_usuario    Int
+  tipo          String   @db.VarChar(20)
+  cantidad      Int
+  stock_antes   Int
+  stock_despues Int
+  referencia    String?  @db.VarChar(100)
+  motivo        String?
+  fecha         DateTime @default(now()) @db.Timestamp(6)
+  producto      Producto @relation(fields: [id_producto], references: [id_producto])
+  usuario       Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+
+  @@index([id_producto], map: "idx_movimiento_producto")
+  @@index([fecha], map: "idx_movimiento_fecha")
+  @@map("movimiento_inventario")
+}
+
+model Compra {
+  id_compra     Int             @id @default(autoincrement())
+  id_proveedor  Int
+  id_usuario    Int
+  num_factura   String?         @db.VarChar(50)
+  fecha         DateTime        @default(now()) @db.Date
+  subtotal      Decimal         @default(0) @db.Decimal(10, 2)
+  descuento     Decimal         @default(0) @db.Decimal(10, 2)
+  total         Decimal         @default(0) @db.Decimal(10, 2)
+  estado        String          @default("Pendiente") @db.VarChar(20)
+  observaciones String?
+  created_at    DateTime        @default(now()) @db.Timestamp(6)
+  proveedor     Proveedor       @relation(fields: [id_proveedor], references: [id_proveedor])
+  usuario       Usuario         @relation(fields: [id_usuario], references: [id_usuario])
+  detalles      DetalleCompra[]
+
+  @@index([id_proveedor], map: "idx_compra_proveedor")
+  @@map("compra")
+}
+
+model DetalleCompra {
+  id_detalle_compra Int      @id @default(autoincrement())
+  id_compra         Int
+  id_producto       Int
+  cantidad          Int
+  precio_unit       Decimal  @db.Decimal(10, 2)
+  subtotal          Decimal  @default(dbgenerated()) @db.Decimal(10, 2)
+  compra            Compra   @relation(fields: [id_compra], references: [id_compra])
+  producto          Producto @relation(fields: [id_producto], references: [id_producto])
+
+  @@map("detalle_compra")
+}
+
+model OrdenServicio {
+  id_orden          Int             @id @default(autoincrement())
+  id_vehiculo       Int
+  id_mecanico       Int
+  id_cliente        Int?
+  id_usuario        Int
+  tipo_servicio     String          @default("Correctivo") @db.VarChar(50)
+  diagnostico       String?
+  trabajo_realizado String?
+  km_entrada        Int?
+  costo_mano_obra   Decimal         @default(0) @db.Decimal(10, 2)
+  costo_repuestos   Decimal         @default(0) @db.Decimal(10, 2)
+  costo_total       Decimal         @default(dbgenerated()) @db.Decimal(10, 2)
+  estado            String          @default("Pendiente") @db.VarChar(30)
+  fecha_ingreso     DateTime        @default(now()) @db.Date
+  fecha_entrega     DateTime?       @db.Date
+  created_at        DateTime        @default(now()) @db.Timestamp(6)
+  updated_at        DateTime        @default(now()) @db.Timestamp(6)
+  vehiculo          Vehiculo        @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  mecanico          Mecanico        @relation(fields: [id_mecanico], references: [id_mecanico])
+  cliente           Cliente?        @relation(fields: [id_cliente], references: [id_cliente])
+  usuario           Usuario         @relation(fields: [id_usuario], references: [id_usuario])
+  repuestos         OrdenRepuesto[]
+
+  @@index([id_vehiculo], map: "idx_orden_vehiculo")
+  @@index([id_mecanico], map: "idx_orden_mecanico")
+  @@index([estado], map: "idx_orden_estado")
+  @@index([fecha_ingreso], map: "idx_orden_fecha")
+  @@map("orden_servicio")
+}
+
+model OrdenRepuesto {
+  id_orden    Int
+  id_producto Int
+  cantidad    Int
+  precio_unit Decimal       @db.Decimal(10, 2)
+  subtotal    Decimal       @default(dbgenerated()) @db.Decimal(10, 2)
+  orden       OrdenServicio @relation(fields: [id_orden], references: [id_orden])
+  producto    Producto      @relation(fields: [id_producto], references: [id_producto])
+
+  @@id([id_orden, id_producto])
+  @@map("orden_repuesto")
+}
+
+model Viaje {
+  id_viaje          Int      @id @default(autoincrement())
+  id_vehiculo       Int
+  id_piloto         Int
+  id_cliente        Int?
+  id_usuario        Int
+  origen            String   @db.VarChar(150)
+  destino          String   @db.VarChar(150)
+  descripcion_carga String?
+  fecha_salida      DateTime @db.Date
+  fecha_llegada     DateTime? @db.Date
+  km_estimado       Decimal? @db.Decimal(10, 2)
+  km_real           Decimal? @db.Decimal(10, 2)
+  comb_estimado     Decimal? @db.Decimal(10, 2)
+  comb_real         Decimal? @db.Decimal(10, 2)
+  ingreso_total     Decimal  @default(0) @db.Decimal(10, 2)
+  costo_total       Decimal  @default(0) @db.Decimal(10, 2)
+  estado            String   @default("Programado") @db.VarChar(30)
+  observaciones     String?
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+  updated_at        DateTime @default(now()) @db.Timestamp(6)
+  vehiculo          Vehiculo @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  piloto            Piloto   @relation(fields: [id_piloto], references: [id_piloto])
+  cliente           Cliente? @relation(fields: [id_cliente], references: [id_cliente])
+  usuario           Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+  gastos            Gasto[]
+
+  @@index([id_vehiculo], map: "idx_viaje_vehiculo")
+  @@index([id_piloto], map: "idx_viaje_piloto")
+  @@index([estado], map: "idx_viaje_estado")
+  @@index([fecha_salida], map: "idx_viaje_fecha")
+  @@map("viaje")
+}
+
+model Gasto {
+  id_gasto    Int      @id @default(autoincrement())
+  id_viaje    Int?
+  id_usuario  Int
+  concepto    String   @db.VarChar(150)
+  tipo        String   @default("Operativo") @db.VarChar(50)
+  monto       Decimal  @db.Decimal(10, 2)
+  comprobante String?
+  fecha       DateTime @default(now()) @db.Date
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  viaje       Viaje?   @relation(fields: [id_viaje], references: [id_viaje])
+  usuario     Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+
+  @@index([id_viaje], map: "idx_gasto_viaje")
+  @@map("gasto")
+}
+
+model Venta {
+  id_venta        Int            @id @default(autoincrement())
+  id_cliente      Int?
+  id_usuario      Int
+  num_comprobante String?        @unique @db.VarChar(30)
+  subtotal        Decimal        @default(0) @db.Decimal(10, 2)
+  descuento       Decimal        @default(0) @db.Decimal(10, 2)
+  total           Decimal        @default(0) @db.Decimal(10, 2)
+  estado          String         @default("Completada") @db.VarChar(20)
+  fecha           DateTime       @default(now()) @db.Date
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  cliente         Cliente?       @relation(fields: [id_cliente], references: [id_cliente])
+  usuario         Usuario        @relation(fields: [id_usuario], references: [id_usuario])
+  detalles        DetalleVenta[]
+
+  @@index([id_cliente], map: "idx_venta_cliente")
+  @@index([fecha], map: "idx_venta_fecha")
+  @@map("venta")
+}
+
+model DetalleVenta {
+  id_detalle  Int      @id @default(autoincrement())
+  id_venta    Int
+  id_producto Int
+  cantidad    Int
+  precio_unit Decimal  @db.Decimal(10, 2)
+  descuento   Decimal  @default(0) @db.Decimal(10, 2)
+  subtotal    Decimal  @default(dbgenerated()) @db.Decimal(10, 2)
+  venta       Venta    @relation(fields: [id_venta], references: [id_venta])
+  producto    Producto @relation(fields: [id_producto], references: [id_producto])
+
+  @@map("detalle_venta")
+}
+
+model Notificacion {
+  id_notificacion Int      @id @default(autoincrement())
+  id_usuario      Int
+  tipo            String   @db.VarChar(50)
+  referencia_id   Int?
+  referencia_tipo String?  @db.VarChar(50)
+  mensaje         String
+  leida           Boolean  @default(false)
+  fecha           DateTime @default(now()) @db.Timestamp(6)
+  usuario         Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+
+  @@index([id_usuario], map: "idx_notificacion_usuario")
+  @@index([leida], map: "idx_notificacion_leida")
+  @@map("notificacion")
+}
+
+model Permiso {
+  id_permiso  Int          @id @default(autoincrement())
+  nombre      String       @unique @db.VarChar(100)
+  descripcion String?
+  roles       RolPermiso[]
+
+  @@map("permiso")
+}
+
+model RolPermiso {
+  id_rol     Int
+  id_permiso Int
+  rol        Rol     @relation(fields: [id_rol], references: [id_rol], onDelete: Cascade)
+  permiso    Permiso @relation(fields: [id_permiso], references: [id_permiso], onDelete: Cascade)
+
+  @@id([id_rol, id_permiso])
+  @@map("rol_permiso")
+}
+
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  token_hash String   @unique @db.VarChar(255)
+  id_usuario Int
+  usuario    Usuario  @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  expira_en  DateTime @db.Timestamp(6)
+  usado      Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("password_reset_token")
+}

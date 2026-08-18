@@ -1,0 +1,236 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BarChart3, Package, Users, Truck, Receipt, Wrench, Navigation, Calculator, User as UserIcon, ShieldAlert, SearchX,
+} from "lucide-react";
+import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
+import DashboardShell from "./components/DashboardShell";
+import AuthInitializer from "./components/AuthInitializer";
+import { AuthHistoryGuard } from "./components/AuthHistoryGuard";
+import UsersList from "./pages/Users/UsersList";
+import ProfilePage from "./pages/ProfilePage";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthInitializer>
+        <AuthHistoryGuard />
+        <Routes>
+          {/* Rutas públicas protegidas por PublicRoute / GuestGuard */}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/recuperar-password"
+            element={
+              <PublicRoute>
+                <ForgotPasswordPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <PublicRoute>
+                <ResetPasswordPage />
+              </PublicRoute>
+            }
+          />
+
+          {/* Página de error 403 (Acceso No Autorizado) */}
+          <Route
+            path="/no-autorizado"
+            element={
+              <ProtectedRoute>
+                <DashboardShell
+                  title="Acceso No Autorizado"
+                  subtitle="Sección restringida según la configuración de tu cuenta."
+                  icon={<ShieldAlert className="w-10 h-10 text-blue-600" />}
+                >
+                  <UnauthorizedPage />
+                </DashboardShell>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ── Rutas protegidas por rol ─────────────────────────────────── */}
+
+          {/* Superadministrador */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["superadmin", "Superadministrador"]}>
+                <DashboardShell
+                  title="Panel de Administración"
+                  subtitle="Gestión total del sistema, configuración y usuarios."
+                  icon={<Users className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Gestión de Usuarios */}
+          <Route
+            path="/admin/usuarios"
+            element={
+              <ProtectedRoute allowedRoles={["superadmin", "gerente", "Superadministrador", "Gerente"]}>
+                <DashboardShell
+                  title="Gestión de Usuarios"
+                  subtitle="Administra los accesos y roles del sistema."
+                  icon={<Users className="w-10 h-10 text-primary-light" />}
+                >
+                  <UsersList />
+                </DashboardShell>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Gerente */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["gerente", "superadmin", "Gerente", "Superadministrador"]}>
+                <DashboardShell
+                  title="Dashboard Ejecutivo"
+                  subtitle="Resumen operativo, KPIs y reportes de la empresa."
+                  icon={<BarChart3 className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Jefe de Operaciones */}
+          <Route
+            path="/operaciones"
+            element={
+              <ProtectedRoute allowedRoles={["jefe_operaciones", "gerente", "Jefe de Operaciones", "Gerente", "Superadministrador", "superadmin"]}>
+                <DashboardShell
+                  title="Gestión de Operaciones"
+                  subtitle="Control de flota, pilotos y programación de viajes."
+                  icon={<Truck className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Encargado de Bodega */}
+          <Route
+            path="/inventario"
+            element={
+              <ProtectedRoute allowedRoles={["bodeguero", "Encargado de Bodega", "Superadministrador", "superadmin"]}>
+                <DashboardShell
+                  title="Control de Inventario"
+                  subtitle="Gestión de productos, entradas, salidas y proveedores."
+                  icon={<Package className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Recepcionista */}
+          <Route
+            path="/ventas"
+            element={
+              <ProtectedRoute allowedRoles={["recepcionista", "Recepcionista", "Superadministrador", "superadmin"]}>
+                <DashboardShell
+                  title="Ventas y Facturación"
+                  subtitle="Solicitudes de servicio, venta de repuestos y clientes."
+                  icon={<Receipt className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Mecánico */}
+          <Route
+            path="/mecanica"
+            element={
+              <ProtectedRoute allowedRoles={["mecanico", "Mecanico", "Superadministrador", "superadmin"]}>
+                <DashboardShell
+                  title="Órdenes de Trabajo"
+                  subtitle="Órdenes de servicio asignadas y registro de trabajos realizados."
+                  icon={<Wrench className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Piloto */}
+          <Route
+            path="/viajes"
+            element={
+              <ProtectedRoute allowedRoles={["piloto", "Piloto", "Superadministrador", "superadmin"]}>
+                <DashboardShell
+                  title="Mis Viajes"
+                  subtitle="Viajes asignados, incidentes y documentos de tu unidad."
+                  icon={<Navigation className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Contador */}
+          <Route
+            path="/finanzas"
+            element={
+              <ProtectedRoute allowedRoles={["contador", "Contador", "Superadministrador", "superadmin"]}>
+                <DashboardShell
+                  title="Módulo Financiero"
+                  subtitle="Reportes contables, estados financieros y análisis de costos."
+                  icon={<Calculator className="w-10 h-10 text-primary-light" />}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Perfil y Preferencias (Accesible para cualquier usuario autenticado) */}
+          <Route
+            path="/perfil"
+            element={
+              <ProtectedRoute>
+                <DashboardShell
+                  title="Perfil y Preferencias"
+                  subtitle="Estas preferencias solo se aplican a tu cuenta de usuario."
+                  icon={<UserIcon className="w-10 h-10 text-primary-light" />}
+                >
+                  <ProfilePage />
+                </DashboardShell>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Ruta raíz → Login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          {/* 404 (Not Found) dentro del Dashboard Shell para usuarios autenticados */}
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <DashboardShell
+                  title="Página No Encontrada"
+                  subtitle="La sección a la que intentas acceder no existe."
+                  icon={<SearchX className="w-10 h-10 text-blue-600" />}
+                >
+                  <NotFoundPage />
+                </DashboardShell>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthInitializer>
+    </BrowserRouter>
+  );
+}
+
+export default App;

@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply font-sans antialiased;
+  }
+
+  body {
+    @apply bg-dark text-white;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full;
+    background: #0008C8;
+  }
+
+  /* Scrollbar claro para elementos modales y contenedores blancos */
+  .custom-scrollbar-light {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+  }
+  .custom-scrollbar-light::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar-light::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 8px;
+  }
+  .custom-scrollbar-light::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 8px;
+  }
+  .custom-scrollbar-light::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+@layer components {
+  /* Input base */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30
+           focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light
+           transition-all duration-200;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .input-field.error {
+    @apply border-red-500 focus:border-red-500 focus:ring-red-500;
+  }
+
+  /* Button primary */
+  .btn-primary {
+    @apply w-full py-3 px-6 rounded-xl font-semibold text-white
+           bg-primary hover:bg-primary-dark active:scale-[0.98]
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+           relative overflow-hidden;
+  }
+}
