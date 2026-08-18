@@ -21,6 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [sessionExpiredMsg, setSessionExpiredMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,9 +29,18 @@ const LoginPage = () => {
   const { isAuthenticated, isInitializing, isLoading, user } = useAuthStore();
   const location = useLocation();
 
-  const { register, handleSubmit } = useForm<LoginFormData>({
+  const { register, handleSubmit, setValue } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  // Autorellenar usuario si "Recuérdame" fue marcado en un login anterior
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("remembered_username");
+    if (savedUsername) {
+      setValue("usuario", savedUsername);
+      setRememberMe(true);
+    }
+  }, [setValue]);
 
   useEffect(() => {
     // Detectar mensaje de expiración de sesión desde sessionStorage o router state
@@ -63,6 +73,13 @@ const LoginPage = () => {
     setIsSubmitting(true);
     try {
       await login(data);
+      // Login exitoso: guardar o limpiar usuario según "Recuérdame"
+      // NOTA: NUNCA se guarda la contraseña en localStorage por seguridad.
+      if (rememberMe) {
+        localStorage.setItem("remembered_username", data.usuario);
+      } else {
+        localStorage.removeItem("remembered_username");
+      }
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { error?: string }; status?: number } };
       if (axiosError?.response?.status === 429) {
@@ -184,7 +201,21 @@ const LoginPage = () => {
                     </button>
                   </div>
 
-                  <div className="flex justify-end w-full mt-1.5">
+                  <div className="flex items-center justify-between w-full mt-1.5">
+                    {/* Checkbox Recuérdame */}
+                    <label className="flex items-center gap-2 cursor-pointer select-none group">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        disabled={isSubmitting}
+                        className="w-4 h-4 rounded border-gray-300 accent-[#041954] cursor-pointer disabled:opacity-50"
+                      />
+                      <span className="text-xs font-semibold text-gray-500 group-hover:text-[#092C92] transition-colors">
+                        Recuérdame
+                      </span>
+                    </label>
+
                     <Link
                       to="/recuperar-password"
                       className="text-xs text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors truncate"
