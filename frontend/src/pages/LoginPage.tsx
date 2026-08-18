@@ -67,16 +67,27 @@ const LoginPage = () => {
     return <Navigate to={route} replace />;
   }
 
+  // Impide que se escriba o pegue espacios en el campo usuario
+  const handleUsuarioKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === " ") e.preventDefault();
+  };
+
   const onSubmit = async (data: LoginFormData) => {
+    // Sanitizar: eliminar espacios residuales antes de enviar a la API
+    const sanitizedData: LoginFormData = {
+      usuario:   data.usuario.trim(),
+      contrasena: data.contrasena.trim(),
+    };
+
     setServerError(null);
     setSessionExpiredMsg(null);
     setIsSubmitting(true);
     try {
-      await login(data);
+      await login(sanitizedData);
       // Login exitoso: guardar o limpiar usuario según "Recuérdame"
       // NOTA: NUNCA se guarda la contraseña en localStorage por seguridad.
       if (rememberMe) {
-        localStorage.setItem("remembered_username", data.usuario);
+        localStorage.setItem("remembered_username", sanitizedData.usuario);
       } else {
         localStorage.removeItem("remembered_username");
       }
@@ -162,11 +173,18 @@ const LoginPage = () => {
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   <input
                     id="usuario-input"
-                    {...register("usuario")}
+                    {...register("usuario", {
+                      onChange: (e) => {
+                        // Elimina espacios al escribir o pegar texto
+                        const sanitized = e.target.value.replace(/\s+/g, "");
+                        setValue("usuario", sanitized, { shouldValidate: false });
+                      },
+                    })}
                     type="text"
                     autoComplete="username"
                     disabled={isSubmitting}
                     placeholder="Ingresa tu usuario"
+                    onKeyDown={handleUsuarioKeyDown}
                     className="w-full h-11 rounded-xl pl-10 pr-4 text-sm font-medium text-gray-800 bg-white border border-gray-300 outline-none transition-all focus:border-[#092C92] focus:ring-2 focus:ring-[#092C92]/20 disabled:opacity-50"
                   />
                 </div>
