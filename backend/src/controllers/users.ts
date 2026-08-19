@@ -88,7 +88,11 @@ export const getUsers = async (req: Request, res: Response) => {
         permisos_modulos: {
           select: {
             modulo: true,
-            permitido: true
+            permitido: true,
+            ver: true,
+            crear: true,
+            editar: true,
+            eliminar: true
           }
         }
       } as any,
@@ -124,7 +128,7 @@ export const getUserById = async (req: Request, res: Response) => {
         telefono: true,
         created_at: true,
         rol: { select: { id_rol: true, nombre: true } },
-        permisos_modulos: { select: { modulo: true, permitido: true } },
+        permisos_modulos: { select: { modulo: true, permitido: true, ver: true, crear: true, editar: true, eliminar: true } },
         auditorias: {
           take: 10,
           orderBy: { fecha_hora: 'desc' }
@@ -190,7 +194,14 @@ export const createUser = async (req: Request, res: Response) => {
         dias_cambio_password: parseInt(dias_cambio_password) || 90,
         ultimo_cambio_password: new Date(),
         permisos_modulos: Array.isArray(modulosPermitidos) && modulosPermitidos.length > 0 ? {
-          create: modulosPermitidos.map((m: string) => ({ modulo: m, permitido: true }))
+          create: modulosPermitidos.map((m: any) => ({
+            modulo:   typeof m === 'string' ? m : m.modulo,
+            permitido: true,
+            ver:      typeof m === 'string' ? true  : (m.ver      ?? true),
+            crear:    typeof m === 'string' ? false : (m.crear    ?? false),
+            editar:   typeof m === 'string' ? false : (m.editar   ?? false),
+            eliminar: typeof m === 'string' ? false : (m.eliminar ?? false),
+          }))
         } : undefined
       } as any
     });
@@ -271,10 +282,14 @@ export const updateUser = async (req: Request, res: Response) => {
       await prisma.usuarioPermisoModulo.deleteMany({ where: { id_usuario: id } });
       if (modulosPermitidos.length > 0) {
         await prisma.usuarioPermisoModulo.createMany({
-          data: modulosPermitidos.map((m: string) => ({
+          data: modulosPermitidos.map((m: any) => ({
             id_usuario: id,
-            modulo: m,
-            permitido: true
+            modulo:    typeof m === 'string' ? m : m.modulo,
+            permitido: true,
+            ver:      typeof m === 'string' ? true  : (m.ver      ?? true),
+            crear:    typeof m === 'string' ? false : (m.crear    ?? false),
+            editar:   typeof m === 'string' ? false : (m.editar   ?? false),
+            eliminar: typeof m === 'string' ? false : (m.eliminar ?? false),
           }))
         });
       }

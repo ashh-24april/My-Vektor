@@ -60,6 +60,10 @@ model UsuarioPermisoModulo {
   id_usuario Int
   modulo     String  @db.VarChar(50)
   permitido  Boolean @default(true)
+  ver        Boolean @default(true)
+  crear      Boolean @default(false)
+  editar     Boolean @default(false)
+  eliminar   Boolean @default(false)
   usuario    Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
 
   @@id([id_usuario, modulo])

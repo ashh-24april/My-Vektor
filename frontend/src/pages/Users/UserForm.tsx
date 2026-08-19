@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { createUser, updateUser, getUsers, type User } from "../../api/users";
 import { getRoles, type Role } from "../../api/roles";
+import PermissionAccordion, { type ModulePermission } from "../../components/PermissionAccordion";
 
 interface Props {
   user: User | null;
@@ -207,9 +208,18 @@ const UserForm: React.FC<Props> = ({ user, onClose, onSuccess, requireAdminKey }
     ? splitNombre(user.nombre) 
     : { nombres: "", apellidos: "" };
 
-  const initialModulos = user?.permisos_modulos && user.permisos_modulos.length > 0
-    ? user.permisos_modulos.filter(p => p.permitido).map(p => p.modulo)
-    : ALL_MODULES;
+  const buildInitialModulos = (): ModulePermission[] => {
+    if (user?.permisos_modulos && user.permisos_modulos.length > 0) {
+      return ALL_MODULES.map(modName => {
+        const saved = (user.permisos_modulos as any[]).find((p: any) => p.modulo === modName);
+        return saved
+          ? { modulo: modName, ver: saved.ver ?? saved.permitido ?? true, crear: saved.crear ?? false, editar: saved.editar ?? false, eliminar: saved.eliminar ?? false }
+          : { modulo: modName, ver: false, crear: false, editar: false, eliminar: false };
+      });
+    }
+    return ALL_MODULES.map(m => ({ modulo: m, ver: true, crear: false, editar: false, eliminar: false }));
+  };
+  const initialModulos = buildInitialModulos();
 
   const [formData, setFormData] = useState({
     nombres: initialNombres,
@@ -223,7 +233,7 @@ const UserForm: React.FC<Props> = ({ user, onClose, onSuccess, requireAdminKey }
     permitir_cambio_password: user?.permitir_cambio_password ?? true,
     max_intentos_fallidos: user?.max_intentos_fallidos ?? 5,
     dias_cambio_password: user?.dias_cambio_password ?? 90,
-    modulosPermitidos: initialModulos as string[],
+    modulosPermitidos: initialModulos,
     adminKey: "",
   });
 
@@ -266,9 +276,11 @@ const UserForm: React.FC<Props> = ({ user, onClose, onSuccess, requireAdminKey }
   useEffect(() => {
     if (user) {
       const { nombres, apellidos } = splitNombre(user.nombre);
-      const modulos = user.permisos_modulos && user.permisos_modulos.length > 0
-        ? user.permisos_modulos.filter(p => p.permitido).map(p => p.modulo)
-        : ALL_MODULES;
+      const modulos: ModulePermission[] = ALL_MODULES.map(modName => {
+        const saved = (user.permisos_modulos as any[] | undefined)?.find((p: any) => p.modulo === modName);
+        if (saved) return { modulo: modName, ver: saved.ver ?? saved.permitido ?? true, crear: saved.crear ?? false, editar: saved.editar ?? false, eliminar: saved.eliminar ?? false };
+        return { modulo: modName, ver: false, crear: false, editar: false, eliminar: false };
+      });
 
       setFormData(prev => ({
         ...prev,
@@ -282,7 +294,7 @@ const UserForm: React.FC<Props> = ({ user, onClose, onSuccess, requireAdminKey }
         permitir_cambio_password: user.permitir_cambio_password ?? true,
         max_intentos_fallidos: user.max_intentos_fallidos ?? 5,
         dias_cambio_password: user.dias_cambio_password ?? 90,
-        modulosPermitidos: modulos as string[]
+        modulosPermitidos: modulos
       }));
     }
   }, [user]);
@@ -346,27 +358,25 @@ const UserForm: React.FC<Props> = ({ user, onClose, onSuccess, requireAdminKey }
     setActiveStep(targetStep);
   };
 
-  const handleModuleToggle = (moduleName: string) => {
-    setFormData(prev => {
-      const exists = prev.modulosPermitidos.includes(moduleName);
-      if (exists) {
-        return {
-          ...prev,
-          modulosPermitidos: prev.modulosPermitidos.filter(m => m !== moduleName)
-        };
-      } else {
-        return {
-          ...prev,
-          modulosPermitidos: [...prev.modulosPermitidos, moduleName]
-        };
-      }
-    });
+  const handlePermissionChange = (updated: ModulePermission) => {
+    setFormData(prev => ({
+      ...prev,
+      modulosPermitidos: (prev.modulosPermitidos as ModulePermission[]).map(p =>
+        p.modulo === updated.modulo ? updated : p
+      )
+    }));
   };
 
   const handleSelectAllModules = (select: boolean) => {
     setFormData(prev => ({
       ...prev,
-      modulosPermitidos: select ? [...ALL_MODULES] : []
+      modulosPermitidos: ALL_MODULES.map(m => ({
+        modulo: m,
+        ver:      select,
+        crear:    false,
+        editar:   false,
+        eliminar: false,
+      } as ModulePermission))
     }));
   };
 
@@ -401,7 +411,10 @@ const UserForm: React.FC<Props> = ({ user, onClose, onSuccess, requireAdminKey }
         permitir_cambio_password: formData.permitir_cambio_password,
         max_intentos_fallidos: Number(formData.max_intentos_fallidos),
         dias_cambio_password: Number(formData.dias_cambio_password),
-        modulosPermitidos: formData.modulosPermitidos,
+        // Enviar solo módulos con al menos una acción activa (estructura granular completa)
+        modulosPermitidos: (formData.modulosPermitidos as ModulePermission[]).filter(
+          p => p.ver || p.crear || p.editar || p.eliminar
+        ),
         ...(requireAdminKey ? { adminKey: formData.adminKey.trim() } : {})
       };
 
@@ -756,57 +769,73 @@ const UserForm: React.FC<Props> = ({ user, onClose, onSuccess, requireAdminKey }
           )}
 
           {/* PASO 3: PERMISOS GRANULARES DE MÓDULOS */}
-          {activeStep === 3 && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-800">Módulos habilitados para este usuario:</span>
-                <div className="space-x-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAllModules(true)}
-                    className="text-blue-600 font-medium hover:underline"
-                  >
-                    Marcar todos
-                  </button>
-                  <span>|</span>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAllModules(false)}
-                    className="text-gray-500 font-medium hover:underline"
-                  >
-                    Desmarcar
-                  </button>
-                </div>
-              </div>
+          {activeStep === 3 && (() => {
+            // Mapeo de módulos por rol para mostrar badge "Rol Base"
+            const ROL_MODULES: Record<string, string[]> = {
+              'Superadministrador': ALL_MODULES,
+              'Gerente':            ALL_MODULES,
+              'Jefe de Operaciones': ['Dashboard', 'Operaciones', 'Viajes'],
+              'Encargado de Bodega': ['Dashboard', 'Inventario'],
+              'Recepcionista':       ['Dashboard', 'Ventas'],
+              'Mecanico':            ['Dashboard', 'Mecánica'],
+              'Piloto':              ['Dashboard', 'Viajes'],
+              'Contador':            ['Dashboard', 'Finanzas'],
+            };
+            const roleName = roles.find(r => r.id_rol === formData.id_rol)?.nombre || '';
+            const rolBaseModules = ROL_MODULES[roleName] || [];
 
-              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1 border rounded-xl border-gray-100 bg-gray-50/50">
-                {ALL_MODULES.map(moduleName => {
-                  const isChecked = formData.modulosPermitidos.includes(moduleName);
-                  return (
-                    <label
-                      key={moduleName}
-                      className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
-                        isChecked
-                          ? "bg-white border-blue-500 text-blue-900 shadow-sm"
-                          : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white"
-                      }`}
+            return (
+              <div className="space-y-3 animate-fade-in">
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <span className="text-sm font-semibold text-gray-800">Permisos por módulo</span>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      Configura qué puede hacer este usuario en cada módulo del sistema.
+                    </p>
+                  </div>
+                  <div className="space-x-2 text-xs shrink-0 ml-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectAllModules(true)}
+                      className="text-blue-600 font-medium hover:underline"
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleModuleToggle(moduleName)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      Activar todos
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectAllModules(false)}
+                      className="text-gray-500 font-medium hover:underline"
+                    >
+                      Desactivar
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-[370px] overflow-y-auto pr-0.5">
+                  {ALL_MODULES.map(modName => {
+                    const perm = (formData.modulosPermitidos as ModulePermission[]).find(
+                      p => p.modulo === modName
+                    );
+                    if (!perm) return null;
+                    return (
+                      <PermissionAccordion
+                        key={modName}
+                        permission={perm}
+                        isRolBase={rolBaseModules.includes(modName)}
+                        onChange={handlePermissionChange}
                       />
-                      <span className="ml-2.5 text-sm font-medium">{moduleName}</span>
-                    </label>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                <p className="text-[11px] text-gray-400 italic pt-0.5">
+                  Los módulos <span className="text-purple-600 font-semibold">Rol Base</span> corresponden
+                  al paquete estándar del rol asignado. Puedes otorgar módulos adicionales libremente.
+                </p>
               </div>
-              <p className="text-xs text-gray-500 italic">
-                Nota: Los permisos asignados aquí prevalecen para la navegación del usuario en el sistema.
-              </p>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ACCIONES Y BOTONES DE NAVEGACIÓN */}
           <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
