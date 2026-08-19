@@ -136,7 +136,17 @@ export const login = async (req: Request, res: Response) => {
       apellidos = parts[1];
     }
 
-    const allowedModules = user.permisos_modulos.filter(m => m.permitido).map(m => m.modulo);
+    // Construir lista de permisos granulares por módulo
+    const allowedModules = user.permisos_modulos
+      .filter(m => m.permitido)
+      .map(m => ({
+        modulo:   m.modulo,
+        permitido: m.permitido,
+        ver:      (m as any).ver      ?? true,
+        crear:    (m as any).crear    ?? false,
+        editar:   (m as any).editar   ?? false,
+        eliminar: (m as any).eliminar ?? false,
+      }));
 
     return res.status(200).json({
       accessToken,
@@ -236,7 +246,16 @@ export const refresh = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    const allowedModules = dbToken.usuario.permisos_modulos.filter(m => m.permitido).map(m => m.modulo);
+    const allowedModules = dbToken.usuario.permisos_modulos
+      .filter(m => m.permitido)
+      .map(m => ({
+        modulo:    m.modulo,
+        permitido: m.permitido,
+        ver:      (m as any).ver      ?? true,
+        crear:    (m as any).crear    ?? false,
+        editar:   (m as any).editar   ?? false,
+        eliminar: (m as any).eliminar ?? false,
+      }));
 
     return res.status(200).json({
       accessToken: newAccessToken,

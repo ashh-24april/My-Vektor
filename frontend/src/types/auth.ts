@@ -1,4 +1,12 @@
-// Tipos compartidos del sistema de autenticación MyVektor
+// Estructura granular de permisos por módulo
+export interface PermisoModulo {
+  modulo: string;
+  permitido: boolean;
+  ver: boolean;
+  crear: boolean;
+  editar: boolean;
+  eliminar: boolean;
+}
 
 export interface User {
   id: number;
@@ -12,8 +20,29 @@ export interface User {
   en_linea?: boolean;
   permitir_cambio_password?: boolean;
   ultimo_cambio_password?: string;
-  permisos_modulos?: string[];
+  permisos_modulos?: PermisoModulo[];
 }
+
+/**
+ * Verifica si el usuario tiene una acción específica sobre un módulo.
+ * - Superadministrador y Gerente: siempre true.
+ * - Sin permisos configurados: true (compatibilidad con cuentas sin restricciones).
+ * - Con permisos: busca el módulo y verifica la acción exacta.
+ */
+export const hasPermission = (
+  user: User | null,
+  modulo: string,
+  accion: keyof Omit<PermisoModulo, 'modulo' | 'permitido'>
+): boolean => {
+  if (!user) return false;
+  if (user.rol === 'Superadministrador' || user.rol === 'Gerente') return true;
+  if (!user.permisos_modulos || user.permisos_modulos.length === 0) return true;
+  const permiso = user.permisos_modulos.find(
+    p => p.modulo.toLowerCase() === modulo.toLowerCase()
+  );
+  if (!permiso || !permiso.permitido) return false;
+  return permiso[accion] === true;
+};
 
 export interface AuthState {
   user: User | null;
