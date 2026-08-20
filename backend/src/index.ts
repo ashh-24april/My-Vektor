@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
 import rolesRoutes from "./routes/roles";
+import inventarioRoutes from "./routes/inventario";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -53,6 +54,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/roles", rolesRoutes);
+app.use("/api/inventario", inventarioRoutes);
 
 // Ruta de estado general para validaciones
 app.get("/health", (req, res) => {
