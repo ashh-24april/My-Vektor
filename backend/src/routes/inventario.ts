@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyToken } from "../middlewares/auth";
+import { authenticateToken } from "../middlewares/auth";
 import {
   getCategorias, createCategoria, updateCategoria, deleteCategoria,
   getProveedores, createProveedor, updateProveedor, deleteProveedor,
@@ -11,7 +11,7 @@ import {
 const router = Router();
 
 // Todas las rutas de inventario requieren autenticación
-router.use(verifyToken);
+router.use(authenticateToken);
 
 // Categorías
 router.get("/categorias",              getCategorias);
