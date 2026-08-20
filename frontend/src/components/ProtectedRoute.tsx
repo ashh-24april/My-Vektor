@@ -9,16 +9,22 @@ import UnauthorizedPage from "../pages/UnauthorizedPage";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  /**
+   * Si se especifica, el usuario puede acceder aunque no tenga el rol base,
+   * siempre que tenga ver:true para este módulo en sus permisos_modulos.
+   */
+  requiredModule?: string;
 }
 
 /**
  * ProtectedRoute
- * Protege rutas verificando autenticación y roles de usuario.
- * - Mientras inicializa la sesión -> Muestra pantalla de carga limpia para evitar redirección prematura.
- * - Si no está autenticado -> Redirige a /login conservando el origen.
- * - Si está autenticado pero el rol no coincide -> Renderiza IN-SITU UnauthorizedPage.
+ * Protege rutas verificando autenticación, rol y/o permisos de módulo.
+ * - Mientras inicializa -> Pantalla de carga.
+ * - Si no está autenticado -> Redirige a /login.
+ * - Si está autenticado: permite acceso si cumple ROL o si tiene ver:true en requiredModule.
+ * - Si no cumple ninguna condición -> Renderiza IN-SITU UnauthorizedPage (401).
  */
-const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, allowedRoles, requiredModule }: ProtectedRouteProps) => {
   const { isAuthenticated, isInitializing, isLoading, user } = useAuthStore();
   const location = useLocation();
 
@@ -43,7 +49,19 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
       return dbName ? [role, dbName] : [role];
     });
 
-    if (!normalizedAllowed.includes(user.rol)) {
+    const hasRole = normalizedAllowed.includes(user.rol);
+
+    // Segunda vía: permiso explícito de módulo con ver:true
+    const hasModulePermission =
+      !!requiredModule &&
+      Array.isArray(user.permisos_modulos) &&
+      user.permisos_modulos.some(
+        (p: any) =>
+          p.modulo?.toLowerCase() === requiredModule.toLowerCase() &&
+          p.ver === true
+      );
+
+    if (!hasRole && !hasModulePermission) {
       return (
         <DashboardShell
           title="Acceso No Autorizado"
