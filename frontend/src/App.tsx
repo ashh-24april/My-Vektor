@@ -69,7 +69,7 @@ function App() {
           <Route
             path="/admin/dashboard"
             element={
-              <ProtectedRoute allowedRoles={["superadmin", "Superadministrador"]}>
+              <ProtectedRoute allowedRoles={["superadmin", "Superadministrador"]} requiredModule="Dashboard">
                 <DashboardShell
                   title="Panel de Administración"
                   subtitle="Gestión total del sistema, configuración y usuarios."
@@ -83,7 +83,7 @@ function App() {
           <Route
             path="/admin/usuarios"
             element={
-              <ProtectedRoute allowedRoles={["superadmin", "gerente", "Superadministrador", "Gerente"]}>
+              <ProtectedRoute allowedRoles={["superadmin", "gerente", "Superadministrador", "Gerente"]} requiredModule="Usuarios">
                 <DashboardShell
                   title="Gestión de Usuarios"
                   subtitle="Administra los accesos y roles del sistema."
@@ -99,7 +99,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute allowedRoles={["gerente", "superadmin", "Gerente", "Superadministrador"]}>
+              <ProtectedRoute allowedRoles={["gerente", "superadmin", "Gerente", "Superadministrador"]} requiredModule="Dashboard">
                 <DashboardShell
                   title="Dashboard Ejecutivo"
                   subtitle="Resumen operativo, KPIs y reportes de la empresa."
@@ -113,7 +113,7 @@ function App() {
           <Route
             path="/operaciones"
             element={
-              <ProtectedRoute allowedRoles={["jefe_operaciones", "gerente", "Jefe de Operaciones", "Gerente", "Superadministrador", "superadmin"]}>
+              <ProtectedRoute allowedRoles={["jefe_operaciones", "gerente", "Jefe de Operaciones", "Gerente", "Superadministrador", "superadmin"]} requiredModule="Operaciones">
                 <DashboardShell
                   title="Gestión de Operaciones"
                   subtitle="Control de flota, pilotos y programación de viajes."
@@ -127,7 +127,7 @@ function App() {
           <Route
             path="/inventario"
             element={
-              <ProtectedRoute allowedRoles={["bodeguero", "Encargado de Bodega", "Superadministrador", "superadmin"]}>
+              <ProtectedRoute allowedRoles={["bodeguero", "Encargado de Bodega", "Superadministrador", "superadmin"]} requiredModule="Inventario">
                 <DashboardShell
                   title="Control de Inventario"
                   subtitle="Gestión de productos, entradas, salidas y proveedores."
@@ -141,7 +141,7 @@ function App() {
           <Route
             path="/ventas"
             element={
-              <ProtectedRoute allowedRoles={["recepcionista", "Recepcionista", "Superadministrador", "superadmin"]}>
+              <ProtectedRoute allowedRoles={["recepcionista", "Recepcionista", "Superadministrador", "superadmin"]} requiredModule="Ventas">
                 <DashboardShell
                   title="Ventas y Facturación"
                   subtitle="Solicitudes de servicio, venta de repuestos y clientes."
@@ -155,7 +155,7 @@ function App() {
           <Route
             path="/mecanica"
             element={
-              <ProtectedRoute allowedRoles={["mecanico", "Mecanico", "Superadministrador", "superadmin"]}>
+              <ProtectedRoute allowedRoles={["mecanico", "Mecanico", "Superadministrador", "superadmin"]} requiredModule="Mecánica">
                 <DashboardShell
                   title="Órdenes de Trabajo"
                   subtitle="Órdenes de servicio asignadas y registro de trabajos realizados."
@@ -169,7 +169,7 @@ function App() {
           <Route
             path="/viajes"
             element={
-              <ProtectedRoute allowedRoles={["piloto", "Piloto", "Superadministrador", "superadmin"]}>
+              <ProtectedRoute allowedRoles={["piloto", "Piloto", "Superadministrador", "superadmin"]} requiredModule="Viajes">
                 <DashboardShell
                   title="Mis Viajes"
                   subtitle="Viajes asignados, incidentes y documentos de tu unidad."
@@ -183,7 +183,7 @@ function App() {
           <Route
             path="/finanzas"
             element={
-              <ProtectedRoute allowedRoles={["contador", "Contador", "Superadministrador", "superadmin"]}>
+              <ProtectedRoute allowedRoles={["contador", "Contador", "Superadministrador", "superadmin"]} requiredModule="Finanzas">
                 <DashboardShell
                   title="Módulo Financiero"
                   subtitle="Reportes contables, estados financieros y análisis de costos."
