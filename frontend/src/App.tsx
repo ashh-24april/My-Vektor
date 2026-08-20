@@ -14,6 +14,7 @@ import AuthInitializer from "./components/AuthInitializer";
 import { AuthHistoryGuard } from "./components/AuthHistoryGuard";
 import UsersList from "./pages/Users/UsersList";
 import ProfilePage from "./pages/ProfilePage";
+import InventarioPage from "./pages/Inventario/InventarioPage";
 
 function App() {
   return (
@@ -132,7 +133,9 @@ function App() {
                   title="Control de Inventario"
                   subtitle="Gestión de productos, entradas, salidas y proveedores."
                   icon={<Package className="w-10 h-10 text-primary-light" />}
-                />
+                >
+                  <InventarioPage />
+                </DashboardShell>
               </ProtectedRoute>
             }
           />
