@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { requestSupabasePasswordReset } from "../api/users";
+import { supabase } from "../lib/supabase";
 import { Mail, KeyRound, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+
+const GENERIC_SUCCESS_MSG =
+  "Si el correo electrónico coincide con una cuenta registrada, recibirás un mensaje con las instrucciones en unos minutos.";
 
 const ForgotPasswordPage: React.FC = () => {
   const [correo, setCorreo] = useState("");
@@ -21,20 +24,22 @@ const ForgotPasswordPage: React.FC = () => {
     setSuccessMsg("");
 
     try {
-      const frontendUrl = window.location.origin;
-      const res = await requestSupabasePasswordReset(correo.trim(), frontendUrl);
+      const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(
+        correo.trim(),
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }
+      );
 
-      // Respuesta de seguridad genérica conforme a OWASP
-      setSuccessMsg(
-        res.message ||
-          "Si el correo electrónico coincide con una cuenta registrada, recibirás un mensaje con las instrucciones en unos minutos."
-      );
+      if (supabaseError) {
+        // No se expone el detalle real al usuario (mitigación OWASP de enumeración de usuarios)
+        console.error("Error Supabase resetPasswordForEmail:", supabaseError.message);
+      }
     } catch (err: any) {
-      // En producción mostramos el mensaje seguro genérico para evitar filtrado de información
-      setSuccessMsg(
-        "Si el correo electrónico coincide con una cuenta registrada, recibirás un mensaje con las instrucciones en unos minutos."
-      );
+      console.error("Error inesperado al solicitar reset:", err?.message || err);
     } finally {
+      // Siempre se muestra el mensaje genérico, exista o no la cuenta y haya o no error
+      setSuccessMsg(GENERIC_SUCCESS_MSG);
       setLoading(false);
     }
   };
@@ -56,7 +61,7 @@ const ForgotPasswordPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Mensaje de Error (si existe falla de red o validación básica) */}
+        {/* Mensaje de Error (validación básica del formulario) */}
         {error && (
           <div className="mb-4 bg-red-50 text-red-700 p-3.5 rounded-xl border border-red-200 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
@@ -70,9 +75,7 @@ const ForgotPasswordPage: React.FC = () => {
             <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="font-semibold text-sm text-emerald-950">Solicitud Procesada</p>
-              <p className="text-emerald-800 leading-relaxed">
-                {successMsg}
-              </p>
+              <p className="text-emerald-800 leading-relaxed">{successMsg}</p>
               <p className="text-[11px] text-emerald-700 mt-2 font-medium">
                 * Revisa tu bandeja de entrada y la carpeta de correo no deseado (Spam).
               </p>
