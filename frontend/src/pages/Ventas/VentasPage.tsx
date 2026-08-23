@@ -26,6 +26,22 @@ import { hasPermission } from "../../types/auth";
 import VentaFormModal from "./components/VentaFormModal";
 import VentaDetalleModal from "./components/VentaDetalleModal";
 import CambiarEstadoModal from "./components/CambiarEstadoModal";
+import ExportDropdown from "../../components/ExportDropdown";
+import { type ExportColumn } from "../../utils/exportUtils";
+
+const VENTAS_COLUMNS: ExportColumn<Venta>[] = [
+  { header: "Folio Factura", accessor: row => row.folio_factura || `FAC-${row.id_venta}` },
+  { header: "Cliente", accessor: row => row.cliente?.nombre || row.cliente_nombre || "Cliente General" },
+  { header: "NIT", accessor: row => row.cliente?.nit || "C/F" },
+  { header: "Concepto Servicio", accessor: "concepto_servicio" },
+  { header: "Fecha Emisión", accessor: row => (row.fecha_emision ? new Date(row.fecha_emision).toLocaleDateString("es-GT") : "") },
+  { header: "Fecha Vencimiento", accessor: row => (row.fecha_vencimiento ? new Date(row.fecha_vencimiento).toLocaleDateString("es-GT") : "N/A") },
+  { header: "Subtotal (Q)", accessor: "subtotal", format: v => Number(v || 0).toFixed(2) },
+  { header: "Impuesto IVA 12% (Q)", accessor: "impuesto", format: v => Number(v || 0).toFixed(2) },
+  { header: "Total Factura (Q)", accessor: "total", format: v => Number(v || 0).toFixed(2) },
+  { header: "Estado de Pago", accessor: "estado_pago" },
+  { header: "Método de Cobro", accessor: row => row.metodo_pago || "Pendiente" }
+];
 
 const CONCEPTOS_FILTRO = [
   "Todos",
@@ -251,7 +267,7 @@ const VentasPage: React.FC = () => {
             />
           </div>
 
-          {/* Botón Acción Nueva Venta (Permiso Crear) */}
+          {/* Botones de Acción */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
@@ -263,6 +279,14 @@ const VentasPage: React.FC = () => {
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
             </button>
+
+            <ExportDropdown
+              data={ventas}
+              columns={VENTAS_COLUMNS}
+              filename={`Reporte_Ventas_Facturacion_${new Date().toISOString().split("T")[0]}`}
+              sheetName="Ventas"
+              modulo="Ventas"
+            />
 
             {canCrear && (
               <button

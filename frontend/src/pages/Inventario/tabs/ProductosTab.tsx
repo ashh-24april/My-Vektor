@@ -12,6 +12,20 @@ import { hasPermission } from "../../../types/auth";
 import { useAuthStore } from "../../../store/authStore";
 import ProductoForm from "../components/ProductoForm";
 import MovimientoModal from "../components/MovimientoModal";
+import ExportDropdown from "../../../components/ExportDropdown";
+import { type ExportColumn } from "../../../utils/exportUtils";
+
+const PRODUCTOS_COLUMNS: ExportColumn<Producto>[] = [
+  { header: "Código", accessor: "codigo" },
+  { header: "Descripción", accessor: "descripcion" },
+  { header: "Categoría", accessor: row => row.categoria?.nombre || "Sin categoría" },
+  { header: "Stock Actual", accessor: "stock" },
+  { header: "Stock Mínimo", accessor: "stock_minimo" },
+  { header: "Unidad de Medida", accessor: "unidad_medida" },
+  { header: "Precio Compra (Q)", accessor: "precio_compra", format: v => Number(v || 0).toFixed(2) },
+  { header: "Precio Venta (Q)", accessor: "precio_venta", format: v => Number(v || 0).toFixed(2) },
+  { header: "Estado", accessor: row => (row.activo ? "Activo" : "Inactivo") }
+];
 
 const ProductosTab: React.FC = () => {
   const { user } = useAuthStore();
@@ -105,9 +119,17 @@ const ProductosTab: React.FC = () => {
           <span className="text-gray-600">Stock bajo</span>
         </label>
 
-        <button onClick={() => loadProductos()} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 transition-colors">
+        <button onClick={() => loadProductos()} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 transition-colors" title="Refrescar">
           <RefreshCw className="w-4 h-4" />
         </button>
+
+        <ExportDropdown
+          data={productos}
+          columns={PRODUCTOS_COLUMNS}
+          filename={`Reporte_Inventario_Productos_${new Date().toISOString().split("T")[0]}`}
+          sheetName="Productos"
+          modulo="Inventario"
+        />
 
         {canCreate && (
           <button

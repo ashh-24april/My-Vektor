@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/authStore";
 import { useAuth } from "../hooks/useAuth";
 import { Menu, User, ChevronDown, UserPlus, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
 
 // Logo oficial MyVektor desde Supabase Storage
 const LOGO_MYVEKTOR_URL = import.meta.env.VITE_LOGO_URL || "";
@@ -61,12 +62,15 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </span>
       </div>
 
-      {/* Derecha: Píldora de Perfil y Menú Desplegable (Dropdown) */}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          onClick={() => setIsDropdownOpen((prev) => !prev)}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 cursor-pointer"
-        >
+      {/* Derecha: Campana de Notificaciones y Píldora de Perfil */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <NotificationBell />
+
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 cursor-pointer"
+          >
           {/* Foto o Icono de Avatar */}
           {user?.foto_url ? (
             <img
@@ -174,6 +178,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </div>
           </div>
         )}
+      </div>
       </div>
 
       <style>{`

@@ -10,6 +10,19 @@ import {
 } from "../../../api/inventario";
 import { hasPermission } from "../../../types/auth";
 import { useAuthStore } from "../../../store/authStore";
+import ExportDropdown from "../../../components/ExportDropdown";
+import { type ExportColumn } from "../../../utils/exportUtils";
+
+const COMPRAS_COLUMNS: ExportColumn<Compra>[] = [
+  { header: "ID Compra", accessor: "id_compra" },
+  { header: "No. Factura", accessor: row => row.num_factura || "S/N" },
+  { header: "Proveedor", accessor: row => row.proveedor?.nombre || "N/A" },
+  { header: "Fecha", accessor: row => (row.fecha ? new Date(row.fecha).toLocaleDateString("es-GT") : "") },
+  { header: "Subtotal (Q)", accessor: "subtotal", format: v => Number(v || 0).toFixed(2) },
+  { header: "Total (Q)", accessor: "total", format: v => Number(v || 0).toFixed(2) },
+  { header: "Estado", accessor: "estado" },
+  { header: "Registrado Por", accessor: row => row.usuario?.nombre || "Sistema" }
+];
 
 const ESTADO_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
   Pendiente: { label: "Pendiente", icon: <Clock className="w-3.5 h-3.5" />, color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
@@ -122,9 +135,17 @@ const ComprasTab: React.FC = () => {
           {Object.keys(ESTADO_CONFIG).map(e => <option key={e} value={e}>{e}</option>)}
         </select>
 
-        <button onClick={load} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500">
+        <button onClick={load} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500" title="Refrescar">
           <RefreshCw className="w-4 h-4" />
         </button>
+
+        <ExportDropdown
+          data={compras}
+          columns={COMPRAS_COLUMNS}
+          filename={`Reporte_Inventario_Compras_${new Date().toISOString().split("T")[0]}`}
+          sheetName="Compras"
+          modulo="Inventario - Compras"
+        />
 
         {canCreate && (
           <button onClick={openModal}

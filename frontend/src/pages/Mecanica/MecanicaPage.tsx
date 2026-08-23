@@ -28,6 +28,26 @@ import OTFormModal from "./components/OTFormModal";
 import DespachoRepuestosModal from "./components/DespachoRepuestosModal";
 import CerrarOTModal from "./components/CerrarOTModal";
 import OTDetalleModal from "./components/OTDetalleModal";
+import ExportDropdown from "../../components/ExportDropdown";
+import { type ExportColumn } from "../../utils/exportUtils";
+
+const MECANICA_COLUMNS: ExportColumn<OrdenTrabajo>[] = [
+  { header: "No. OT", accessor: row => row.numero_ot || `OT-${row.id_orden}` },
+  { header: "Placa Unidad", accessor: row => row.vehiculo?.placa || "N/A" },
+  { header: "Vehículo", accessor: row => `${row.vehiculo?.marca || ""} ${row.vehiculo?.modelo || ""}`.trim() },
+  { header: "Mecánico Responsable", accessor: row => `${row.mecanico?.nombre || ""} ${row.mecanico?.apellido || ""}`.trim() },
+  { header: "Piloto Reporta", accessor: row => (row.piloto ? `${row.piloto.nombre} ${row.piloto.apellido}` : "N/A") },
+  { header: "Tipo Servicio", accessor: "tipo_mantenimiento" },
+  { header: "Diagnóstico Inicial", accessor: row => row.diagnostico_inicial || row.diagnostico || "" },
+  { header: "Trabajo Realizado", accessor: row => row.trabajo_realizado || "En Proceso" },
+  { header: "Km al Ingreso", accessor: row => row.km_entrada || "N/A" },
+  { header: "Fecha Ingreso", accessor: row => (row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleDateString("es-GT") : "") },
+  { header: "Fecha Cierre/Entrega", accessor: row => (row.fecha_cierre || row.fecha_estimada_entrega ? new Date(row.fecha_cierre || row.fecha_estimada_entrega!).toLocaleDateString("es-GT") : "Pendiente") },
+  { header: "Costo Mano Obra (Q)", accessor: "costo_mano_obra", format: v => Number(v || 0).toFixed(2) },
+  { header: "Costo Repuestos (Q)", accessor: "costo_repuestos", format: v => Number(v || 0).toFixed(2) },
+  { header: "Costo Total (Q)", accessor: "costo_total", format: v => Number(v || 0).toFixed(2) },
+  { header: "Estado OT", accessor: "estado" }
+];
 
 const TIPOS_MANT_FILTRO = ["Todos", "Preventivo", "Correctivo", "Emergencia"];
 const ESTADOS_OT_FILTRO = ["Todos", "Pendiente", "En Proceso", "Completada", "Cancelada"];
@@ -258,6 +278,14 @@ const MecanicaPage: React.FC = () => {
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
             </button>
+
+            <ExportDropdown
+              data={ordenes}
+              columns={MECANICA_COLUMNS}
+              filename={`Reporte_Mecanica_OTs_${new Date().toISOString().split("T")[0]}`}
+              sheetName="OrdenesTrabajo"
+              modulo="Mecánica"
+            />
 
             {canCrear && (
               <button

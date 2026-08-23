@@ -4,6 +4,20 @@ import { getUsers, updateUser, type User } from "../../api/users";
 import UserForm from "./UserForm";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { useAuthStore } from "../../store/authStore";
+import ExportDropdown from "../../components/ExportDropdown";
+import { type ExportColumn } from "../../utils/exportUtils";
+
+const USERS_COLUMNS: ExportColumn<User>[] = [
+  { header: "ID", accessor: "id_usuario" },
+  { header: "Nombre", accessor: "nombre" },
+  { header: "Usuario", accessor: "usuario" },
+  { header: "Correo Electrónico", accessor: "correo" },
+  { header: "Teléfono", accessor: row => row.telefono || "N/A" },
+  { header: "Rol Asignado", accessor: row => row.rol?.nombre || "Sin Rol" },
+  { header: "Estado Cuenta", accessor: row => (row.activo ? "Activo" : "Inactivo") },
+  { header: "En Línea", accessor: row => (row.en_linea ? "Conectado" : "Desconectado") },
+  { header: "Última Conexión", accessor: row => (row.ultima_conexion ? new Date(row.ultima_conexion).toLocaleString("es-GT") : "Nunca") }
+];
 
 const UsersList: React.FC = () => {
   const { user: currentUser } = useAuthStore();
@@ -108,12 +122,22 @@ const UsersList: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-800">Administración de Usuarios</h1>
           <p className="text-xs text-gray-500 mt-1">Gestión de accesos, políticas de seguridad y conexión en tiempo real.</p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition-colors font-medium text-sm flex items-center gap-2"
-        >
-          <span>Agregar Usuario</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <ExportDropdown
+            data={filteredUsers}
+            columns={USERS_COLUMNS}
+            filename={`Reporte_Usuarios_MyVektor_${new Date().toISOString().split("T")[0]}`}
+            sheetName="Usuarios"
+            modulo="Usuarios"
+          />
+
+          <button
+            onClick={handleCreate}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition-colors font-medium text-sm flex items-center gap-2"
+          >
+            <span>Agregar Usuario</span>
+          </button>
+        </div>
       </div>
 
       {error && <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-4">{error}</div>}
