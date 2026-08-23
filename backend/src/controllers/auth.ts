@@ -551,7 +551,7 @@ export const requestSupabasePasswordReset = async (req: Request, res: Response) 
       return res.status(200).json({ message: GENERIC_SUCCESS_MSG });
     }
 
-    const redirectOrigin = frontendUrl || process.env.FRONTEND_URL || "http://localhost:5173";
+    const redirectOrigin = frontendUrl || process.env.FRONTEND_URL || "https://my-vektor.vercel.app/";
     const redirectTo = `${redirectOrigin.replace(/\/$/, "")}/reset-password`;
 
     // 1. Asegurar que la cuenta exista en Supabase Auth (auth.users)

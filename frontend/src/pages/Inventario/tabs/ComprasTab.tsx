@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  Plus, ShoppingCart, ChevronDown, RefreshCw, X, Save, Loader2, Trash2,
+  Plus, ShoppingCart, RefreshCw, X, Save, Loader2, Trash2,
   CheckCircle2, Clock, XCircle, Eye,
 } from "lucide-react";
 import {
@@ -43,7 +43,6 @@ const ComprasTab: React.FC = () => {
 
   // Detalle
   const [detalle, setDetalle]         = useState<Compra | null>(null);
-  const [loadingDetalle, setLoadingDetalle] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -108,9 +107,8 @@ const ComprasTab: React.FC = () => {
   };
 
   const openDetalle = async (id: number) => {
-    setLoadingDetalle(true);
     try { setDetalle(await getCompraById(id)); }
-    finally { setLoadingDetalle(false); }
+    catch { /* silent */ }
   };
 
   const inputCls = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30";

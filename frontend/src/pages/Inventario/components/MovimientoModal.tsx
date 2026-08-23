@@ -24,8 +24,6 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  const cfg = TIPO_CONFIG[tipo];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cant = parseInt(cantidad);
