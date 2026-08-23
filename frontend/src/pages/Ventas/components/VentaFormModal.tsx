@@ -202,7 +202,7 @@ const VentaFormModal: React.FC<VentaFormModalProps> = ({ onClose, onSuccess }) =
   };
 
   const inputCls =
-    "w-full px-3.5 py-2.5 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all";
+    "w-full px-3.5 py-2.5 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all font-medium";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -470,7 +470,7 @@ const VentaFormModal: React.FC<VentaFormModalProps> = ({ onClose, onSuccess }) =
                     <select
                       value={linea.id_producto}
                       onChange={e => handleUpdateLinea(index, "id_producto", Number(e.target.value))}
-                      className="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white"
+                      className="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white text-gray-900 font-medium"
                     >
                       <option value={0}>Seleccionar producto...</option>
                       {productos.map(p => (
@@ -486,7 +486,7 @@ const VentaFormModal: React.FC<VentaFormModalProps> = ({ onClose, onSuccess }) =
                       placeholder="Cant."
                       value={linea.cantidad}
                       onChange={e => handleUpdateLinea(index, "cantidad", Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white"
+                      className="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white text-gray-900 font-medium"
                     />
 
                     <input
@@ -495,7 +495,7 @@ const VentaFormModal: React.FC<VentaFormModalProps> = ({ onClose, onSuccess }) =
                       placeholder="Precio"
                       value={linea.precio_unit}
                       onChange={e => handleUpdateLinea(index, "precio_unit", parseFloat(e.target.value) || 0)}
-                      className="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white font-medium"
+                      className="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white text-gray-900 font-bold"
                     />
 
                     <button

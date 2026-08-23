@@ -78,7 +78,7 @@ const ProveedoresTab: React.FC = () => {
     finally { setDeleting(false); }
   };
 
-  const inputCls = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400";
+  const inputCls = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400";
 
   if (loading) return (
     <div className="flex items-center justify-center py-16 text-gray-400">

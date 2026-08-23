@@ -46,7 +46,7 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
     }
   };
 
-  const inputCls = `w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white
+  const inputCls = `w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 font-medium
     focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all`;
 
   return (

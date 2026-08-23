@@ -82,7 +82,7 @@ const ProductosTab: React.FC = () => {
           <input
             value={q} onChange={e => { setQ(e.target.value); setPage(1); }}
             placeholder="Buscar por código o descripción..."
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           />
         </div>
 
@@ -90,7 +90,7 @@ const ProductosTab: React.FC = () => {
           <select
             value={catFilter}
             onChange={e => { setCatFilter(e.target.value ? Number(e.target.value) : ""); setPage(1); }}
-            className="appearance-none pl-3 pr-8 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white"
+            className="appearance-none pl-3 pr-8 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white text-gray-900 font-medium"
           >
             <option value="">Todas las categorías</option>
             {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}

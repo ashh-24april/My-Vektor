@@ -25,6 +25,20 @@
     background: #0008C8;
   }
 
+  /* Asegurar que todos los inputs, selects, textareas y options tengan texto oscuro legible (#0f172a) */
+  input, select, textarea, option {
+    color: #0f172a;
+  }
+
+  /* Preservar inputs de autenticación / modo oscuro */
+  .input-field,
+  .text-white input,
+  input.text-white,
+  select.text-white,
+  textarea.text-white {
+    color: #ffffff;
+  }
+
   /* Scrollbar claro para elementos modales y contenedores blancos */
   .custom-scrollbar-light {
     scrollbar-width: thin;

@@ -111,7 +111,7 @@ const ComprasTab: React.FC = () => {
     catch { /* silent */ }
   };
 
-  const inputCls = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30";
+  const inputCls = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 
   return (
     <div className="space-y-4">

@@ -110,12 +110,12 @@ const CategoriasTab: React.FC = () => {
           <input
             value={nombre} onChange={e => setNombre(e.target.value)}
             placeholder="Nombre de la categoría *"
-            className="w-full px-3 py-2 text-sm rounded-xl border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="w-full px-3 py-2 text-sm rounded-xl border border-blue-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30"
           />
           <input
             value={desc} onChange={e => setDesc(e.target.value)}
             placeholder="Descripción (opcional)"
-            className="w-full px-3 py-2 text-sm rounded-xl border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="w-full px-3 py-2 text-sm rounded-xl border border-blue-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30"
           />
           {formError && <p className="text-xs text-red-600">{formError}</p>}
           <div className="flex gap-2 justify-end">
