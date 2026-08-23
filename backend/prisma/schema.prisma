@@ -82,17 +82,25 @@ model RefreshToken {
 }
 
 model Auditoria {
-  id_auditoria Int      @id @default(autoincrement())
-  id_usuario   Int
-  accion       String   @db.VarChar(100)
-  modulo       String   @db.VarChar(50)
-  descripcion  String?
-  ip_origen    String?  @db.VarChar(45)
-  fecha_hora   DateTime @default(now()) @db.Timestamp(6)
-  usuario      Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+  id_auditoria    Int      @id @default(autoincrement())
+  id_usuario      Int
+  usuario_nombre  String?  @db.VarChar(100)
+  usuario_email   String?  @db.VarChar(150)
+  rol_usuario     String?  @db.VarChar(50)
+  accion          String   @db.VarChar(100)
+  modulo          String   @db.VarChar(50)
+  registro_id     String?  @db.VarChar(100)
+  descripcion     String?
+  detalles_cambio String?  @db.Text
+  ip_origen       String?  @db.VarChar(45)
+  navegador       String?  @db.VarChar(255)
+  fecha_hora      DateTime @default(now()) @db.Timestamp(6)
+  usuario         Usuario  @relation(fields: [id_usuario], references: [id_usuario])
 
   @@index([id_usuario], map: "idx_auditoria_usuario")
   @@index([fecha_hora], map: "idx_auditoria_fecha")
+  @@index([modulo], map: "idx_auditoria_modulo")
+  @@index([accion], map: "idx_auditoria_accion")
   @@map("auditoria")
 }
 

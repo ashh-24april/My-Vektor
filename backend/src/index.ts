@@ -11,6 +11,7 @@ import ventasRoutes from "./routes/ventas";
 import mecanicaRoutes from "./routes/mecanica";
 import dashboardRoutes from "./routes/dashboard";
 import notificacionesRoutes from "./routes/notificaciones";
+import auditoriaRoutes from "./routes/auditoria";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -63,6 +64,7 @@ app.use("/api/ventas", ventasRoutes);
 app.use("/api/mecanica", mecanicaRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
+app.use("/api/auditoria", auditoriaRoutes);
 
 // Ruta de estado general para validaciones
 app.get("/health", (req, res) => {

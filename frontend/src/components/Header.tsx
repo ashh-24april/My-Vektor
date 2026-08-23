@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "../store/authStore";
 import { useAuth } from "../hooks/useAuth";
-import { Menu, User, ChevronDown, UserPlus, LogOut } from "lucide-react";
+import { Menu, User, ChevronDown, UserPlus, LogOut, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 
@@ -31,12 +31,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     };
   }, []);
 
-  // Determinar si el usuario tiene rol de Administrador o Superadministrador
+  // Determinar si el usuario tiene rol de Administrador, Superadministrador o Gerente
   const rolClean = (user?.rol || "").toLowerCase();
   const isAdmin =
     rolClean === "administrador" ||
     rolClean === "superadministrador" ||
     rolClean.includes("admin");
+  const canViewAudit = isAdmin || rolClean === "gerente" || rolClean.includes("geren");
 
   return (
     <header
@@ -139,16 +140,27 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
             </div>
 
-            {/* Sección de Acciones Rápidas (Condicional por Rol Administrador/Superadministrador) */}
-            {isAdmin && (
-              <div className="py-2 px-3">
+            {/* Sección de Acciones Rápidas (Condicional por Rol Administrador / Gerente) */}
+            {canViewAudit && (
+              <div className="py-2 px-3 space-y-1">
+                {isAdmin && (
+                  <Link
+                    to="/admin/usuarios"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-[#041954]/5 hover:text-[#092C92] rounded-xl transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4 text-[#092C92]" />
+                    <span>Crea un usuario</span>
+                  </Link>
+                )}
+
                 <Link
-                  to="/admin/usuarios"
+                  to="/auditoria"
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-[#041954]/5 hover:text-[#092C92] rounded-xl transition-colors"
                 >
-                  <UserPlus className="w-4 h-4 text-[#092C92]" />
-                  <span>Crea un usuario</span>
+                  <ShieldCheck className="w-4 h-4 text-[#092C92]" />
+                  <span>Bitácora de Auditoría</span>
                 </Link>
               </div>
             )}

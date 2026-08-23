@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import {
-  BarChart3, Package, Users, Truck, Receipt, Wrench, Navigation, Calculator, User as UserIcon, ShieldAlert, SearchX,
+  BarChart3, Package, Users, Truck, Receipt, Wrench, Navigation, Calculator, User as UserIcon, ShieldAlert, SearchX, ShieldCheck,
 } from "lucide-react";
 import LoginPage from "./pages/LoginPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -18,6 +18,7 @@ import InventarioPage from "./pages/Inventario/InventarioPage";
 import VentasPage from "./pages/Ventas/VentasPage";
 import MecanicaPage from "./pages/Mecanica/MecanicaPage";
 import DashboardOverview from "./pages/Dashboard/DashboardOverview";
+import AuditoriaPage from "./pages/Auditoria/AuditoriaPage";
 
 function App() {
   return (
@@ -218,6 +219,22 @@ function App() {
                   icon={<UserIcon className="w-10 h-10 text-primary-light" />}
                 >
                   <ProfilePage />
+                </DashboardShell>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Bitácora de Auditoría (Exclusivo Administradores y Gerencia) */}
+          <Route
+            path="/auditoria"
+            element={
+              <ProtectedRoute allowedRoles={["superadmin", "Superadministrador", "gerente", "Gerente", "administrador", "Administrador"]}>
+                <DashboardShell
+                  title="Bitácora de Auditoría"
+                  subtitle="Registro y trazabilidad de seguridad de eventos y cambios del sistema."
+                  icon={<ShieldCheck className="w-10 h-10 text-primary-light" />}
+                >
+                  <AuditoriaPage />
                 </DashboardShell>
               </ProtectedRoute>
             }
