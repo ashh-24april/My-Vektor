@@ -17,6 +17,7 @@ import ProfilePage from "./pages/ProfilePage";
 import InventarioPage from "./pages/Inventario/InventarioPage";
 import VentasPage from "./pages/Ventas/VentasPage";
 import MecanicaPage from "./pages/Mecanica/MecanicaPage";
+import DashboardOverview from "./pages/Dashboard/DashboardOverview";
 
 function App() {
   return (
@@ -74,10 +75,12 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["superadmin", "Superadministrador"]} requiredModule="Dashboard">
                 <DashboardShell
-                  title="Panel de Administración"
-                  subtitle="Gestión total del sistema, configuración y usuarios."
-                  icon={<Users className="w-10 h-10 text-primary-light" />}
-                />
+                  title="Panel de Control General"
+                  subtitle="Métricas operativas, financieras y de inventario en tiempo real."
+                  icon={<BarChart3 className="w-10 h-10 text-primary-light" />}
+                >
+                  <DashboardOverview />
+                </DashboardShell>
               </ProtectedRoute>
             }
           />
@@ -107,7 +110,9 @@ function App() {
                   title="Dashboard Ejecutivo"
                   subtitle="Resumen operativo, KPIs y reportes de la empresa."
                   icon={<BarChart3 className="w-10 h-10 text-primary-light" />}
-                />
+                >
+                  <DashboardOverview />
+                </DashboardShell>
               </ProtectedRoute>
             }
           />
