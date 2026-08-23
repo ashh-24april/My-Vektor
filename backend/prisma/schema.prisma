@@ -155,9 +155,10 @@ model Piloto {
   foto_url       String?
   foto_dpi_url   String?
   foto_lic_url   String?
-  created_at     DateTime @default(now()) @db.Timestamp(6)
-  updated_at     DateTime @default(now()) @db.Timestamp(6)
+  created_at     DateTime        @default(now()) @db.Timestamp(6)
+  updated_at     DateTime        @default(now()) @db.Timestamp(6)
   viajes         Viaje[]
+  ordenes_servicio OrdenServicio[]
 
   @@index([num_licencia], map: "idx_piloto_licencia")
   @@index([venc_licencia], map: "idx_piloto_vencimiento")
@@ -320,28 +321,37 @@ model DetalleCompra {
 }
 
 model OrdenServicio {
-  id_orden          Int             @id @default(autoincrement())
-  id_vehiculo       Int
-  id_mecanico       Int
-  id_cliente        Int?
-  id_usuario        Int
-  tipo_servicio     String          @default("Correctivo") @db.VarChar(50)
-  diagnostico       String?
-  trabajo_realizado String?
-  km_entrada        Int?
-  costo_mano_obra   Decimal         @default(0) @db.Decimal(10, 2)
-  costo_repuestos   Decimal         @default(0) @db.Decimal(10, 2)
-  costo_total       Decimal         @default(dbgenerated()) @db.Decimal(10, 2)
-  estado            String          @default("Pendiente") @db.VarChar(30)
-  fecha_ingreso     DateTime        @default(now()) @db.Date
-  fecha_entrega     DateTime?       @db.Date
-  created_at        DateTime        @default(now()) @db.Timestamp(6)
-  updated_at        DateTime        @default(now()) @db.Timestamp(6)
-  vehiculo          Vehiculo        @relation(fields: [id_vehiculo], references: [id_vehiculo])
-  mecanico          Mecanico        @relation(fields: [id_mecanico], references: [id_mecanico])
-  cliente           Cliente?        @relation(fields: [id_cliente], references: [id_cliente])
-  usuario           Usuario         @relation(fields: [id_usuario], references: [id_usuario])
-  repuestos         OrdenRepuesto[]
+  id_orden               Int             @id @default(autoincrement())
+  numero_ot              String?         @unique @db.VarChar(50)
+  id_vehiculo            Int
+  id_mecanico            Int
+  id_piloto              Int?
+  id_cliente             Int?
+  id_usuario             Int
+  tipo_mantenimiento     String          @default("Preventivo") @db.VarChar(50)
+  tipo_servicio          String          @default("Preventivo") @db.VarChar(50)
+  diagnostico_inicial    String?
+  diagnostico            String?
+  trabajo_realizado      String?
+  km_entrada             Int?
+  costo_mano_obra        Decimal         @default(0) @db.Decimal(10, 2)
+  costo_repuestos        Decimal         @default(0) @db.Decimal(10, 2)
+  costo_total            Decimal         @default(0) @db.Decimal(10, 2)
+  estado                 String          @default("Pendiente") @db.VarChar(30)
+  fecha_ingreso          DateTime        @default(now()) @db.Date
+  fecha_estimada_entrega DateTime?       @db.Date
+  fecha_entrega          DateTime?       @db.Date
+  fecha_cierre           DateTime?       @db.Timestamp(6)
+  observaciones          String?
+  activo                 Boolean         @default(true)
+  created_at             DateTime        @default(now()) @db.Timestamp(6)
+  updated_at             DateTime        @default(now()) @db.Timestamp(6)
+  vehiculo               Vehiculo        @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  mecanico               Mecanico        @relation(fields: [id_mecanico], references: [id_mecanico])
+  piloto                 Piloto?         @relation(fields: [id_piloto], references: [id_piloto])
+  cliente                Cliente?        @relation(fields: [id_cliente], references: [id_cliente])
+  usuario                Usuario         @relation(fields: [id_usuario], references: [id_usuario])
+  repuestos              OrdenRepuesto[]
 
   @@index([id_vehiculo], map: "idx_orden_vehiculo")
   @@index([id_mecanico], map: "idx_orden_mecanico")
@@ -355,8 +365,8 @@ model OrdenRepuesto {
   id_producto Int
   cantidad    Int
   precio_unit Decimal       @db.Decimal(10, 2)
-  subtotal    Decimal       @default(dbgenerated()) @db.Decimal(10, 2)
-  orden       OrdenServicio @relation(fields: [id_orden], references: [id_orden])
+  subtotal    Decimal       @default(0) @db.Decimal(10, 2)
+  orden       OrdenServicio @relation(fields: [id_orden], references: [id_orden], onDelete: Cascade)
   producto    Producto      @relation(fields: [id_producto], references: [id_producto])
 
   @@id([id_orden, id_producto])

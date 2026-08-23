@@ -16,6 +16,7 @@ import UsersList from "./pages/Users/UsersList";
 import ProfilePage from "./pages/ProfilePage";
 import InventarioPage from "./pages/Inventario/InventarioPage";
 import VentasPage from "./pages/Ventas/VentasPage";
+import MecanicaPage from "./pages/Mecanica/MecanicaPage";
 
 function App() {
   return (
@@ -166,7 +167,9 @@ function App() {
                   title="Órdenes de Trabajo"
                   subtitle="Órdenes de servicio asignadas y registro de trabajos realizados."
                   icon={<Wrench className="w-10 h-10 text-primary-light" />}
-                />
+                >
+                  <MecanicaPage />
+                </DashboardShell>
               </ProtectedRoute>
             }
           />
