@@ -15,6 +15,7 @@ import { AuthHistoryGuard } from "./components/AuthHistoryGuard";
 import UsersList from "./pages/Users/UsersList";
 import ProfilePage from "./pages/ProfilePage";
 import InventarioPage from "./pages/Inventario/InventarioPage";
+import VentasPage from "./pages/Ventas/VentasPage";
 
 function App() {
   return (
@@ -149,7 +150,9 @@ function App() {
                   title="Ventas y Facturación"
                   subtitle="Solicitudes de servicio, venta de repuestos y clientes."
                   icon={<Receipt className="w-10 h-10 text-primary-light" />}
-                />
+                >
+                  <VentasPage />
+                </DashboardShell>
               </ProtectedRoute>
             }
           />

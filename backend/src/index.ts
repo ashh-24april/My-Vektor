@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
 import rolesRoutes from "./routes/roles";
 import inventarioRoutes from "./routes/inventario";
+import ventasRoutes from "./routes/ventas";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -55,6 +56,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/inventario", inventarioRoutes);
+app.use("/api/ventas", ventasRoutes);
 
 // Ruta de estado general para validaciones
 app.get("/health", (req, res) => {

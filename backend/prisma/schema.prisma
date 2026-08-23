@@ -117,6 +117,7 @@ model Vehiculo {
   documentos       DocumentoVehiculo[]
   ordenes_servicio OrdenServicio[]
   viajes           Viaje[]
+  ventas           Venta[]
 
   @@map("vehiculo")
 }
@@ -414,22 +415,40 @@ model Gasto {
 }
 
 model Venta {
-  id_venta        Int            @id @default(autoincrement())
-  id_cliente      Int?
-  id_usuario      Int
-  num_comprobante String?        @unique @db.VarChar(30)
-  subtotal        Decimal        @default(0) @db.Decimal(10, 2)
-  descuento       Decimal        @default(0) @db.Decimal(10, 2)
-  total           Decimal        @default(0) @db.Decimal(10, 2)
-  estado          String         @default("Completada") @db.VarChar(20)
-  fecha           DateTime       @default(now()) @db.Date
-  created_at      DateTime       @default(now()) @db.Timestamp(6)
-  cliente         Cliente?       @relation(fields: [id_cliente], references: [id_cliente])
-  usuario         Usuario        @relation(fields: [id_usuario], references: [id_usuario])
-  detalles        DetalleVenta[]
+  id_venta          Int            @id @default(autoincrement())
+  folio_factura     String?        @unique @db.VarChar(50)
+  id_cliente        Int?
+  id_usuario        Int
+  id_vehiculo       Int?
+  cliente_nombre    String?        @db.VarChar(150)
+  cliente_nit       String?        @db.VarChar(30)
+  cliente_telefono  String?        @db.VarChar(30)
+  cliente_direccion String?        @db.VarChar(200)
+  concepto_servicio String         @default("Flete") @db.VarChar(100)
+  num_comprobante   String?        @unique @db.VarChar(30)
+  subtotal          Decimal        @default(0) @db.Decimal(10, 2)
+  impuesto          Decimal        @default(0) @db.Decimal(10, 2)
+  descuento         Decimal        @default(0) @db.Decimal(10, 2)
+  total             Decimal        @default(0) @db.Decimal(10, 2)
+  estado            String         @default("Completada") @db.VarChar(20)
+  estado_pago       String         @default("Pendiente") @db.VarChar(20)
+  metodo_pago       String?        @db.VarChar(50)
+  fecha             DateTime       @default(now()) @db.Date
+  fecha_emision     DateTime       @default(now()) @db.Timestamp(6)
+  fecha_vencimiento DateTime?      @db.Date
+  fecha_pago        DateTime?      @db.Timestamp(6)
+  observaciones     String?
+  activo            Boolean        @default(true)
+  created_at        DateTime       @default(now()) @db.Timestamp(6)
+  updated_at        DateTime       @default(now()) @db.Timestamp(6)
+  cliente           Cliente?       @relation(fields: [id_cliente], references: [id_cliente])
+  usuario           Usuario        @relation(fields: [id_usuario], references: [id_usuario])
+  vehiculo          Vehiculo?      @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  detalles          DetalleVenta[]
 
   @@index([id_cliente], map: "idx_venta_cliente")
   @@index([fecha], map: "idx_venta_fecha")
+  @@index([estado_pago], map: "idx_venta_estado_pago")
   @@map("venta")
 }
 
