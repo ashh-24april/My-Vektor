@@ -43,6 +43,9 @@ export interface Producto {
   stock_minimo: number;
   precio_compra: number;
   precio_venta: number;
+  numero_factura?: string | null;
+  rotacion?: string | null;
+  origen?: string | null;
   activo: boolean;
   foto_url?: string | null;
   created_at: string;
@@ -59,6 +62,7 @@ export interface MovimientoInventario {
   stock_antes: number;
   stock_despues: number;
   referencia?: string | null;
+  numero_factura?: string | null;
   motivo?: string | null;
   fecha: string;
   usuario?: { nombre: string; usuario: string };
@@ -155,6 +159,18 @@ export const getProductoById = async (id: number): Promise<Producto & { movimien
   return res.data;
 };
 
+export const getSiguienteCodigoSKU = async (id_categoria: number): Promise<{
+  prefix: string;
+  categoria: string;
+  siguienteCodigo: string;
+  siguienteNumero: number;
+}> => {
+  const res = await api.get("/api/inventario/productos/siguiente-codigo", {
+    params: { id_categoria }
+  });
+  return res.data;
+};
+
 export const createProducto = async (data: Partial<Producto>): Promise<Producto> => {
   const res = await api.post("/api/inventario/productos", data);
   return res.data;
@@ -181,6 +197,7 @@ export const registrarMovimiento = async (data: {
   tipo: "ENTRADA" | "SALIDA" | "AJUSTE";
   cantidad: number;
   referencia?: string;
+  numero_factura?: string;
   motivo?: string;
 }): Promise<{ movimiento: MovimientoInventario; stock_actual: number }> => {
   const res = await api.post("/api/inventario/movimientos", data);

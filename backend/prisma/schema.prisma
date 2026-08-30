@@ -259,6 +259,9 @@ model Producto {
   stock_minimo           Int                   @default(0)
   precio_compra          Decimal               @default(0) @db.Decimal(10, 2)
   precio_venta           Decimal               @default(0) @db.Decimal(10, 2)
+  numero_factura         String?               @db.VarChar(100)
+  rotacion               String?               @default("Media") @db.VarChar(20)
+  origen                 String?               @default("Genérico") @db.VarChar(30)
   activo                 Boolean               @default(true)
   foto_url               String?
   created_at             DateTime              @default(now()) @db.Timestamp(6)
@@ -277,18 +280,19 @@ model Producto {
 }
 
 model MovimientoInventario {
-  id_movimiento Int      @id @default(autoincrement())
-  id_producto   Int
-  id_usuario    Int
-  tipo          String   @db.VarChar(20)
-  cantidad      Int
-  stock_antes   Int
-  stock_despues Int
-  referencia    String?  @db.VarChar(100)
-  motivo        String?
-  fecha         DateTime @default(now()) @db.Timestamp(6)
-  producto      Producto @relation(fields: [id_producto], references: [id_producto])
-  usuario       Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+  id_movimiento  Int      @id @default(autoincrement())
+  id_producto    Int
+  id_usuario     Int
+  tipo           String   @db.VarChar(20)
+  cantidad       Int
+  stock_antes    Int
+  stock_despues  Int
+  referencia     String?  @db.VarChar(100)
+  numero_factura String?  @db.VarChar(100)
+  motivo         String?
+  fecha          DateTime @default(now()) @db.Timestamp(6)
+  producto       Producto @relation(fields: [id_producto], references: [id_producto])
+  usuario        Usuario  @relation(fields: [id_usuario], references: [id_usuario])
 
   @@index([id_producto], map: "idx_movimiento_producto")
   @@index([fecha], map: "idx_movimiento_fecha")

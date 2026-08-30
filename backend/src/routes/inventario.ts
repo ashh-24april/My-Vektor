@@ -3,7 +3,7 @@ import { authenticateToken } from "../middlewares/auth";
 import {
   getCategorias, createCategoria, updateCategoria, deleteCategoria,
   getProveedores, createProveedor, updateProveedor, deleteProveedor,
-  getProductos, getProductoById, createProducto, updateProducto, deleteProducto,
+  getProductos, getProductoById, getSiguienteCodigoSKU, createProducto, updateProducto, deleteProducto,
   getMovimientos, registrarMovimiento,
   getCompras, getCompraById, createCompra, updateCompraEstado,
 } from "../controllers/inventario";
@@ -27,6 +27,7 @@ router.delete("/proveedores/:id",      deleteProveedor);
 
 // Productos
 router.get("/productos",               getProductos);
+router.get("/productos/siguiente-codigo", getSiguienteCodigoSKU);
 router.get("/productos/:id",           getProductoById);
 router.post("/productos",              createProducto);
 router.put("/productos/:id",           updateProducto);

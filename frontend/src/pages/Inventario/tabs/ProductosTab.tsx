@@ -16,9 +16,12 @@ import ExportDropdown from "../../../components/ExportDropdown";
 import { type ExportColumn } from "../../../utils/exportUtils";
 
 const PRODUCTOS_COLUMNS: ExportColumn<Producto>[] = [
-  { header: "Código", accessor: "codigo" },
+  { header: "Código SKU", accessor: "codigo" },
   { header: "Descripción", accessor: "descripcion" },
   { header: "Categoría", accessor: row => row.categoria?.nombre || "Sin categoría" },
+  { header: "No. Factura Compra", accessor: row => row.numero_factura || "N/A" },
+  { header: "Rotación", accessor: row => row.rotacion || "Media" },
+  { header: "Origen", accessor: row => row.origen || "Genérico" },
   { header: "Stock Actual", accessor: "stock" },
   { header: "Stock Mínimo", accessor: "stock_minimo" },
   { header: "Unidad de Medida", accessor: "unidad_medida" },

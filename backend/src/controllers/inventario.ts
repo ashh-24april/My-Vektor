@@ -213,16 +213,90 @@ export const getProductoById = async (req: Request, res: Response) => {
   }
 };
 
+export const getSiguienteCodigoSKU = async (req: Request, res: Response) => {
+  try {
+    const { id_categoria } = req.query;
+    if (!id_categoria) {
+      return res.status(400).json({ error: "id_categoria es requerido." });
+    }
+
+    const categoria = await prisma.categoria.findUnique({
+      where: { id_categoria: parseInt(id_categoria as string) }
+    });
+
+    if (!categoria) {
+      return res.status(404).json({ error: "Categoría no encontrada." });
+    }
+
+    // Normalizar nombre para extraer prefijo de 3 caracteres (sin acentos)
+    const rawNombre = categoria.nombre
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Za-z0-9]/g, "")
+      .toUpperCase();
+
+    const prefix = rawNombre.length >= 3 ? rawNombre.substring(0, 3) : rawNombre.padEnd(3, "X");
+
+    // Buscar productos con este prefijo
+    const productos = await prisma.producto.findMany({
+      where: {
+        codigo: {
+          startsWith: `${prefix}-`,
+          mode: "insensitive"
+        }
+      },
+      select: { codigo: true }
+    });
+
+    let maxNum = 99; // Para que inicie en 100 si no hay registros
+    for (const p of productos) {
+      const match = p.codigo.match(new RegExp(`^${prefix}-(\\d+)$`, "i"));
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+
+    const siguienteNum = maxNum >= 100 ? maxNum + 1 : 100;
+    const siguienteCodigo = `${prefix}-${siguienteNum}`;
+
+    return res.status(200).json({
+      prefix,
+      categoria: categoria.nombre,
+      siguienteCodigo,
+      siguienteNumero: siguienteNum
+    });
+  } catch (err) {
+    console.error("Error getSiguienteCodigoSKU:", err);
+    return res.status(500).json({ error: "Error al generar siguiente código SKU." });
+  }
+};
+
 export const createProducto = async (req: Request, res: Response) => {
   const {
     codigo, descripcion, id_categoria, id_proveedor,
     ubicacion, unidad_medida = "Unidad", stock = 0,
-    stock_minimo = 0, precio_compra = 0, precio_venta = 0, foto_url
+    stock_minimo = 0, precio_compra = 0, precio_venta = 0,
+    numero_factura, rotacion = "Media", origen = "Genérico",
+    foto_url
   } = req.body;
 
   if (!codigo?.trim()) return res.status(400).json({ error: "El código es requerido." });
   if (!descripcion?.trim()) return res.status(400).json({ error: "La descripción es requerida." });
   if (!id_categoria) return res.status(400).json({ error: "La categoría es requerida." });
+
+  // Validación de piso de seguridad de precio (Costo + 10%)
+  const precioCompraNum = parseFloat(precio_compra) || 0;
+  const precioVentaNum = parseFloat(precio_venta) || 0;
+  const pisoMinimo = precioCompraNum * 1.10;
+
+  if (precioCompraNum > 0 && precioVentaNum < pisoMinimo - 0.001) {
+    return res.status(400).json({
+      error: `El precio de venta (Q${precioVentaNum.toFixed(2)}) no puede ser inferior al costo más el 10% de margen mínimo de seguridad (Mínimo: Q${pisoMinimo.toFixed(2)}).`
+    });
+  }
 
   try {
     const producto = await prisma.producto.create({
@@ -235,8 +309,11 @@ export const createProducto = async (req: Request, res: Response) => {
         unidad_medida: unidad_medida?.trim() || "Unidad",
         stock: parseInt(stock) || 0,
         stock_minimo: parseInt(stock_minimo) || 0,
-        precio_compra: parseFloat(precio_compra) || 0,
-        precio_venta: parseFloat(precio_venta) || 0,
+        precio_compra: precioCompraNum,
+        precio_venta: precioVentaNum,
+        numero_factura: numero_factura?.trim() || null,
+        rotacion: rotacion?.trim() || "Media",
+        origen: origen?.trim() || "Genérico",
         foto_url: foto_url || null,
       },
       include: {
@@ -250,13 +327,14 @@ export const createProducto = async (req: Request, res: Response) => {
       await prisma.movimientoInventario.create({
         data: {
           id_producto: producto.id_producto,
-          id_usuario: (req as any).user?.id || 1,
+          id_usuario: (req as any).user?.id_usuario || (req as any).user?.id || 1,
           tipo: "ENTRADA",
           cantidad: producto.stock,
           stock_antes: 0,
           stock_despues: producto.stock,
-          referencia: "STOCK_INICIAL",
-          motivo: "Stock inicial al crear producto",
+          referencia: numero_factura ? `FAC-${numero_factura.trim()}` : "STOCK_INICIAL",
+          numero_factura: numero_factura?.trim() || null,
+          motivo: numero_factura ? `Ingreso inicial según Factura #${numero_factura.trim()}` : "Stock inicial al crear producto",
         },
       });
     }
@@ -274,8 +352,20 @@ export const updateProducto = async (req: Request, res: Response) => {
   const {
     codigo, descripcion, id_categoria, id_proveedor,
     ubicacion, unidad_medida, stock_minimo,
-    precio_compra, precio_venta, activo, foto_url
+    precio_compra, precio_venta, numero_factura,
+    rotacion, origen, activo, foto_url
   } = req.body;
+
+  if (precio_compra !== undefined && precio_venta !== undefined) {
+    const precioCompraNum = parseFloat(precio_compra) || 0;
+    const precioVentaNum = parseFloat(precio_venta) || 0;
+    const pisoMinimo = precioCompraNum * 1.10;
+    if (precioCompraNum > 0 && precioVentaNum < pisoMinimo - 0.001) {
+      return res.status(400).json({
+        error: `El precio de venta (Q${precioVentaNum.toFixed(2)}) no puede ser inferior al costo más el 10% de margen mínimo de seguridad (Mínimo: Q${pisoMinimo.toFixed(2)}).`
+      });
+    }
+  }
 
   try {
     const producto = await prisma.producto.update({
@@ -290,6 +380,9 @@ export const updateProducto = async (req: Request, res: Response) => {
         ...(stock_minimo !== undefined && { stock_minimo: parseInt(stock_minimo) }),
         ...(precio_compra !== undefined && { precio_compra: parseFloat(precio_compra) }),
         ...(precio_venta !== undefined && { precio_venta: parseFloat(precio_venta) }),
+        ...(numero_factura !== undefined && { numero_factura: numero_factura?.trim() || null }),
+        ...(rotacion !== undefined && { rotacion: rotacion?.trim() || "Media" }),
+        ...(origen !== undefined && { origen: origen?.trim() || "Genérico" }),
         ...(activo !== undefined && { activo }),
         ...(foto_url !== undefined && { foto_url }),
       },
@@ -338,8 +431,8 @@ export const getMovimientos = async (req: Request, res: Response) => {
 };
 
 export const registrarMovimiento = async (req: Request, res: Response) => {
-  const { id_producto, tipo, cantidad, referencia, motivo } = req.body;
-  const userId = (req as any).user?.id;
+  const { id_producto, tipo, cantidad, referencia, motivo, numero_factura } = req.body;
+  const userId = (req as any).user?.id_usuario || (req as any).user?.id || 1;
 
   if (!id_producto || !tipo || !cantidad) {
     return res.status(400).json({ error: "Faltan campos requeridos: id_producto, tipo, cantidad." });
@@ -386,7 +479,8 @@ export const registrarMovimiento = async (req: Request, res: Response) => {
           cantidad: cantidadNum,
           stock_antes: stockAntes,
           stock_despues: stockDespues,
-          referencia: referencia?.trim() || null,
+          referencia: referencia?.trim() || (numero_factura ? `FAC-${numero_factura.trim()}` : null),
+          numero_factura: numero_factura?.trim() || null,
           motivo: motivo?.trim() || null,
         },
       }),

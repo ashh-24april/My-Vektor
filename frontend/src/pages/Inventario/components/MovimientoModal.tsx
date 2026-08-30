@@ -17,12 +17,13 @@ const TIPO_CONFIG: Record<TipoMovimiento, { label: string; icon: React.ReactNode
 };
 
 const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, onSuccess }) => {
-  const [tipo, setTipo]         = useState<TipoMovimiento>("ENTRADA");
-  const [cantidad, setCantidad] = useState("");
-  const [motivo, setMotivo]     = useState("");
-  const [referencia, setRef]    = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [tipo, setTipo]                   = useState<TipoMovimiento>("ENTRADA");
+  const [cantidad, setCantidad]           = useState("");
+  const [numeroFactura, setNumeroFactura] = useState("");
+  const [motivo, setMotivo]               = useState("");
+  const [referencia, setRef]              = useState("");
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +36,7 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
         id_producto: producto.id_producto,
         tipo,
         cantidad: cant,
+        numero_factura: numeroFactura.trim() || undefined,
         referencia: referencia.trim() || undefined,
         motivo: motivo.trim() || undefined,
       });
@@ -50,7 +52,7 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
     focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div>
@@ -112,6 +114,13 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
             />
           </div>
 
+          {/* No. Factura */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">No. Factura de Compra (opcional)</label>
+            <input type="text" value={numeroFactura} onChange={e => setNumeroFactura(e.target.value)}
+              placeholder="Ej. FAC-2026-089" className={inputCls} />
+          </div>
+
           {/* Motivo */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Motivo</label>
@@ -121,9 +130,9 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
 
           {/* Referencia */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Referencia (opcional)</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Referencia adicional (opcional)</label>
             <input type="text" value={referencia} onChange={e => setRef(e.target.value)}
-              placeholder="Ej. Factura 001, Orden de trabajo #12" className={inputCls} />
+              placeholder="Ej. Orden de trabajo #12, Requisición 45" className={inputCls} />
           </div>
 
           {error && (
