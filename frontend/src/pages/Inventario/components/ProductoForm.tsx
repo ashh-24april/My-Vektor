@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Save,
@@ -55,19 +56,19 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
     origen:         producto?.origen         ?? "Genérico",
     ubicacion:      producto?.ubicacion      ?? "",
     unidad_medida:  producto?.unidad_medida  ?? "Unidad",
-    stock:          producto?.stock          ?? 0,
-    stock_minimo:   producto?.stock_minimo   ?? 0,
-    precio_compra:  producto?.precio_compra  ?? 0,
-    precio_venta:   producto?.precio_venta   ?? 0,
+    stock:          producto?.stock !== undefined ? String(producto.stock) : "0",
+    stock_minimo:   producto?.stock_minimo !== undefined ? String(producto.stock_minimo) : "0",
+    precio_compra:  producto?.precio_compra !== undefined ? String(producto.precio_compra) : "",
+    precio_venta:   producto?.precio_venta !== undefined ? String(producto.precio_venta) : "",
     foto_url:       producto?.foto_url       ?? "",
   });
 
-  const [categorias, setCategorias]       = useState<Categoria[]>([]);
-  const [proveedores, setProveedores]     = useState<Proveedor[]>([]);
-  const [loading, setLoading]             = useState(false);
-  const [generatingSKU, setGeneratingSKU] = useState(false);
+  const [categorias, setCategorias]         = useState<Categoria[]>([]);
+  const [proveedores, setProveedores]       = useState<Proveedor[]>([]);
+  const [loading, setLoading]               = useState(false);
+  const [generatingSKU, setGeneratingSKU]   = useState(false);
   const [manualCodeEdit, setManualCodeEdit] = useState(false);
-  const [error, setError]                 = useState<string | null>(null);
+  const [error, setError]                   = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getCategorias(), getProveedores()]).then(([cats, provs]) => {
@@ -115,17 +116,76 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
     const { name, value } = e.target;
     setForm(prev => ({
       ...prev,
-      [name]: ["id_categoria", "id_proveedor", "stock", "stock_minimo"].includes(name)
-        ? (value === "" ? null : Number(value))
-        : ["precio_compra", "precio_venta"].includes(name)
-          ? (value === "" ? 0 : parseFloat(value))
-          : value,
+      [name]: name === "id_proveedor" ? (value === "" ? null : Number(value)) : value,
     }));
   };
 
+  // ─── HELPERS PARA VALIDACIÓN Y CONTROL DE INPUTS NUMÉRICOS ───────────────────
+  
+  // 1. Bloqueo en onKeyDown de signos negativos ('-'), positivos ('+'), y notación científica ('e', 'E')
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, allowDecimals = true) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+    if (!allowDecimals && (e.key === "." || e.key === ",")) {
+      e.preventDefault();
+    }
+  };
+
+  // 2. Sanitización en onChange: eliminación de ceros a la izquierda y caracteres inválidos
+  const handleNumericChange = (
+    fieldName: "stock" | "stock_minimo" | "precio_compra" | "precio_venta",
+    rawValue: string,
+    allowDecimals = true
+  ) => {
+    let val = rawValue.replace(/,/g, "."); // Normalizar coma a punto
+
+    if (!allowDecimals) {
+      // Solo dígitos enteros positivos
+      val = val.replace(/\D/g, "");
+      // Si el usuario escribe sobre "0" (ej: "010" -> "10"), remover el cero inicial
+      if (val.length > 1 && val.startsWith("0")) {
+        val = val.replace(/^0+/, "") || "0";
+      }
+    } else {
+      // Decimales: permitir solo dígitos y un único punto
+      val = val.replace(/[^0-9.]/g, "");
+      const parts = val.split(".");
+      if (parts.length > 2) {
+        val = parts[0] + "." + parts.slice(1).join("");
+      }
+      // Remover ceros a la izquierda si no son seguidos por un punto decimal (ej: "05" -> "5", pero "0.5" es válido)
+      if (/^0[0-9]/.test(val)) {
+        val = val.replace(/^0+/, "");
+      }
+    }
+
+    setForm(prev => ({
+      ...prev,
+      [fieldName]: val,
+    }));
+  };
+
+  // 3. Formateo en onBlur si la caja quedó vacía
+  const handleNumericBlur = (
+    fieldName: "stock" | "stock_minimo" | "precio_compra" | "precio_venta",
+    defaultValue = "0"
+  ) => {
+    setForm(prev => {
+      let val = prev[fieldName];
+      if (val === "" || val === undefined) {
+        return { ...prev, [fieldName]: defaultValue };
+      }
+      if (typeof val === "string" && val.endsWith(".")) {
+        val = val.slice(0, -1);
+      }
+      return { ...prev, [fieldName]: val };
+    });
+  };
+
   // ─── ALGORITMO Y MATRIZ DE FIJACIÓN DE PRECIOS ──────────────────────────────
-  const precioCompraNum = typeof form.precio_compra === "number" ? form.precio_compra : parseFloat(form.precio_compra as any) || 0;
-  const precioVentaNum  = typeof form.precio_venta  === "number" ? form.precio_venta  : parseFloat(form.precio_venta  as any) || 0;
+  const precioCompraNum = parseFloat(form.precio_compra) || 0;
+  const precioVentaNum  = parseFloat(form.precio_venta) || 0;
 
   // 1. Piso mínimo obligatorio de seguridad: Costo + 10%
   const pisoMinimoSeguridad = useMemo(() => {
@@ -167,7 +227,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
   // Aplicar sugerencia inteligente al formulario
   const aplicarPrecioSugerido = () => {
     if (calculoPrecios.precioSugerido > 0) {
-      setForm(prev => ({ ...prev, precio_venta: calculoPrecios.precioSugerido }));
+      setForm(prev => ({ ...prev, precio_venta: String(calculoPrecios.precioSugerido) }));
       setError(null);
     }
   };
@@ -188,6 +248,9 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
     setLoading(true);
     setError(null);
     try {
+      const stockNum = Math.max(0, parseInt(form.stock, 10) || 0);
+      const stockMinNum = Math.max(0, parseInt(form.stock_minimo, 10) || 0);
+
       const payload = {
         ...form,
         codigo:         form.codigo.trim().toUpperCase(),
@@ -195,6 +258,8 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
         numero_factura: form.numero_factura?.trim() || null,
         rotacion:       form.rotacion || "Media",
         origen:         form.origen || "Genérico",
+        stock:          stockNum,
+        stock_minimo:   stockMinNum,
         precio_compra:  precioCompraNum,
         precio_venta:   precioVentaNum,
         foto_url:       form.foto_url || null,
@@ -215,8 +280,8 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
     focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400
     placeholder:text-gray-400 transition-all disabled:bg-gray-50 disabled:cursor-not-allowed`;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-gray-100 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-slate-50/80 sticky top-0 z-10">
@@ -245,7 +310,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
             <div className="flex-1 w-full space-y-3">
               {/* Categoría */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Categoría del Repuesto *</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Categoría *</label>
                 <select
                   name="id_categoria"
                   value={form.id_categoria}
@@ -253,7 +318,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                   disabled={!canEdit}
                   className={inputCls}
                 >
-                  <option value={0}>Selecciona una categoría para generar SKU</option>
+                  <option value={0}>Selecciona una categoría</option>
                   {categorias.map(c => (
                     <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
                   ))}
@@ -283,7 +348,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                     value={form.codigo}
                     onChange={handleChange}
                     disabled={(!canEdit || (!manualCodeEdit && !isEdit)) && !manualCodeEdit}
-                    placeholder={generatingSKU ? "Generando SKU consecutivo..." : "Ej. FIL-100"}
+                    placeholder={generatingSKU ? "Generando SKU..." : "Ej. FIL-100"}
                     className={`${inputCls} uppercase font-mono font-bold ${!manualCodeEdit && !isEdit ? "bg-blue-50/50 text-blue-900 border-blue-200" : ""}`}
                   />
                   {generatingSKU && (
@@ -298,9 +363,6 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  Prefijo de 3 letras por categoría + secuencia correlativa iniciando en 100 (Ej: FIL-100, FRE-100).
-                </p>
               </div>
             </div>
           </div>
@@ -386,19 +448,22 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
             </div>
           </div>
 
-          {/* Stock Inicial / Mínimo */}
+          {/* Stock Inicial / Mínimo con Saneamiento Numérico */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
                 {isEdit ? "Stock Actual" : "Stock Inicial"}
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 name="stock"
                 value={form.stock}
-                onChange={handleChange}
+                onKeyDown={e => handleNumericKeyDown(e, false)}
+                onChange={e => handleNumericChange("stock", e.target.value, false)}
+                onBlur={() => handleNumericBlur("stock", "0")}
                 disabled={isEdit || !canEdit}
-                min={0}
+                placeholder="0"
                 className={`${inputCls} ${isEdit ? "bg-gray-50 text-gray-400" : ""}`}
               />
               {isEdit && <p className="text-[11px] text-gray-400 mt-1">Usa la opción "Movimiento" para registrar entradas/salidas.</p>}
@@ -406,12 +471,15 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Stock Mínimo (Alerta de Reabastecimiento)</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 name="stock_minimo"
                 value={form.stock_minimo}
-                onChange={handleChange}
+                onKeyDown={e => handleNumericKeyDown(e, false)}
+                onChange={e => handleNumericChange("stock_minimo", e.target.value, false)}
+                onBlur={() => handleNumericBlur("stock_minimo", "0")}
                 disabled={!canEdit}
-                min={0}
+                placeholder="0"
                 className={inputCls}
               />
             </div>
@@ -477,13 +545,14 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">Q</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     name="precio_compra"
-                    value={form.precio_compra || ""}
-                    onChange={handleChange}
+                    value={form.precio_compra}
+                    onKeyDown={e => handleNumericKeyDown(e, true)}
+                    onChange={e => handleNumericChange("precio_compra", e.target.value, true)}
+                    onBlur={() => handleNumericBlur("precio_compra", "0")}
                     disabled={!canEdit}
-                    min={0}
-                    step="0.01"
                     placeholder="0.00"
                     className={`${inputCls} pl-7 font-semibold`}
                   />
@@ -502,13 +571,14 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">Q</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     name="precio_venta"
-                    value={form.precio_venta || ""}
-                    onChange={handleChange}
+                    value={form.precio_venta}
+                    onKeyDown={e => handleNumericKeyDown(e, true)}
+                    onChange={e => handleNumericChange("precio_venta", e.target.value, true)}
+                    onBlur={() => handleNumericBlur("precio_venta", "0")}
                     disabled={!canEdit}
-                    min={0}
-                    step="0.01"
                     placeholder="0.00"
                     className={`${inputCls} pl-7 font-bold ${
                       esPrecioVentaInvalido
@@ -537,7 +607,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                 <button
                   type="button"
                   onClick={aplicarPrecioSugerido}
-                  className="px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all flex items-center gap-1 shrink-0"
+                  className="px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all flex items-center gap-1 shrink-0 cursor-pointer"
                 >
                   <span>Aplicar Sugerencia</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -572,7 +642,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              className="px-5 py-2.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -580,7 +650,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
               <button
                 type="submit"
                 disabled={loading || esPrecioVentaInvalido}
-                className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#041954] hover:bg-[#092C92] rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#041954] hover:bg-[#092C92] rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 <span>{loading ? "Guardando..." : isEdit ? "Guardar Cambios" : "Crear Producto"}</span>
@@ -591,6 +661,8 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ProductoForm;

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ArrowDown, ArrowUp, SlidersHorizontal, Loader2 } from "lucide-react";
 import { registrarMovimiento, type Producto } from "../../../api/inventario";
 
@@ -25,9 +26,23 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState<string | null>(null);
 
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (["-", "+", "e", "E", ".", ","].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleCantidadChange = (rawValue: string) => {
+    let val = rawValue.replace(/\D/g, "");
+    if (val.length > 1 && val.startsWith("0")) {
+      val = val.replace(/^0+/, "") || "0";
+    }
+    setCantidad(val);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cant = parseInt(cantidad);
+    const cant = parseInt(cantidad, 10);
     if (!cant || cant <= 0) return setError("Ingresa una cantidad válida mayor a 0.");
     setLoading(true);
     setError(null);
@@ -51,9 +66,9 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
   const inputCls = `w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 font-medium
     focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all`;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md border border-gray-100">
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div>
             <h2 className="text-base font-bold text-gray-900">Registrar Movimiento</h2>
@@ -107,8 +122,11 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
               {tipo === "AJUSTE" ? "Nuevo stock total" : "Cantidad"}
             </label>
             <input
-              type="number" min={1} value={cantidad}
-              onChange={e => setCantidad(e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={cantidad}
+              onKeyDown={handleNumericKeyDown}
+              onChange={e => handleCantidadChange(e.target.value)}
               placeholder={tipo === "AJUSTE" ? "Ingresa el stock correcto" : "0"}
               className={inputCls}
             />
@@ -141,11 +159,11 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
 
           <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
             <button type="button" onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              className="px-5 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
               Cancelar
             </button>
             <button type="submit" disabled={loading}
-              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors disabled:opacity-70 ${
+              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors disabled:opacity-70 cursor-pointer ${
                 tipo === "ENTRADA" ? "bg-green-600 hover:bg-green-700" :
                 tipo === "SALIDA"  ? "bg-red-600   hover:bg-red-700"   :
                 "bg-blue-600 hover:bg-blue-700"
@@ -159,6 +177,8 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default MovimientoModal;
