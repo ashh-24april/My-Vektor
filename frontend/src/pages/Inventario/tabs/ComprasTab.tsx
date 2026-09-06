@@ -187,7 +187,7 @@ const ComprasTab: React.FC = () => {
                       <td className="py-3 px-4 text-gray-600">{new Date(c.fecha).toLocaleDateString("es-GT")}</td>
                       <td className="py-3 px-4 font-medium text-gray-800">{c.proveedor?.nombre || "—"}</td>
                       <td className="py-3 px-4 text-gray-500">{c.num_factura || "—"}</td>
-                      <td className="py-3 px-4 text-right font-semibold text-gray-800">Q {c.total.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-gray-800">Q {Number(c.total || 0).toFixed(2)}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.color}`}>
                           {cfg.icon}{cfg.label}
@@ -338,14 +338,14 @@ const ComprasTab: React.FC = () => {
                   {detalle.detalles?.map(d => (
                     <div key={d.id_detalle_compra} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-xl text-xs">
                       <span className="font-medium">{d.producto?.descripcion}</span>
-                      <span className="text-gray-500">{d.cantidad} × Q{d.precio_unit.toFixed(2)} = <strong>Q{d.subtotal.toFixed(2)}</strong></span>
+                      <span className="text-gray-500">{d.cantidad} × Q{Number(d.precio_unit || 0).toFixed(2)} = <strong>Q{Number(d.subtotal || 0).toFixed(2)}</strong></span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="flex justify-between items-center px-4 py-3 bg-gray-50 rounded-2xl">
                 <span className="text-sm font-semibold text-gray-700">Total</span>
-                <span className="text-lg font-bold text-[#041954]">Q {detalle.total.toFixed(2)}</span>
+                <span className="text-lg font-bold text-[#041954]">Q {Number(detalle.total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>

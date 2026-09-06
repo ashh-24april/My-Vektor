@@ -35,12 +35,14 @@ export const hasPermission = (
   accion: keyof Omit<PermisoModulo, 'modulo' | 'permitido'>
 ): boolean => {
   if (!user) return false;
-  if (user.rol === 'Superadministrador' || user.rol === 'Gerente') return true;
+  const rol = (user.rol || "").toLowerCase();
+  if (rol.includes("admin") || rol.includes("geren")) return true;
   if (!user.permisos_modulos || user.permisos_modulos.length === 0) return true;
   const permiso = user.permisos_modulos.find(
-    p => p.modulo.toLowerCase() === modulo.toLowerCase()
+    p => p.modulo && p.modulo.toLowerCase() === modulo.toLowerCase()
   );
-  if (!permiso || !permiso.permitido) return false;
+  if (!permiso) return true;
+  if (!permiso.permitido) return false;
   return permiso[accion] === true;
 };
 

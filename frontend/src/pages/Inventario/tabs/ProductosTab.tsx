@@ -202,7 +202,7 @@ const ProductosTab: React.FC = () => {
                       <span className="text-gray-400 text-xs ml-1">{p.unidad_medida}</span>
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-gray-800">
-                      Q {p.precio_venta.toFixed(2)}
+                      Q {Number(p.precio_venta || 0).toFixed(2)}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-end gap-1">
