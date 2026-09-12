@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus, ShoppingCart, RefreshCw, X, Save, Loader2, Trash2,
-  CheckCircle2, Clock, XCircle, Eye,
+  CheckCircle2, Clock, XCircle, Eye, AlertTriangle
 } from "lucide-react";
 import {
   getCompras, getCompraById, createCompra, updateCompraEstado,
@@ -97,21 +98,38 @@ const ComprasTab: React.FC = () => {
   const subtotal = lineas.reduce((s, l) => s + (l.cantidad * l.precio_unit), 0);
 
   const handleSave = async () => {
-    if (!idProv) return setFormError("Selecciona un proveedor.");
-    if (lineas.some(l => !l.id_producto)) return setFormError("Todos los productos deben estar seleccionados.");
-    setSaving(true); setFormError(null);
+    if (!idProv) return setFormError("Selecciona un proveedor obligatorio (*).");
+    if (lineas.length === 0) return setFormError("Debes agregar al menos una línea de producto.");
+    
+    for (let i = 0; i < lineas.length; i++) {
+      const ln = lineas[i];
+      if (!ln.id_producto || ln.id_producto === 0) {
+        return setFormError(`Selecciona un producto válido en la fila #${i + 1}.`);
+      }
+      if (!ln.cantidad || ln.cantidad <= 0) {
+        return setFormError(`La cantidad en la fila #${i + 1} debe ser mayor a 0.`);
+      }
+      if (ln.precio_unit === undefined || ln.precio_unit === null || ln.precio_unit < 0) {
+        return setFormError(`El precio unitario en la fila #${i + 1} debe ser mayor o igual a 0.`);
+      }
+    }
+
+    setSaving(true);
+    setFormError(null);
     try {
       await createCompra({
         id_proveedor: Number(idProv),
-        num_factura: numFactura || undefined,
-        observaciones: observaciones || undefined,
+        num_factura: numFactura.trim() || undefined,
+        observaciones: observaciones.trim() || undefined,
         detalles: lineas.map(l => ({ id_producto: l.id_producto, cantidad: l.cantidad, precio_unit: l.precio_unit })),
       });
       setModalOpen(false);
       load();
     } catch (err: any) {
       setFormError(err?.response?.data?.error || "Error al registrar compra.");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEstado = async (id: number, estado: string) => {
@@ -149,7 +167,7 @@ const ComprasTab: React.FC = () => {
 
         {canCreate && (
           <button onClick={openModal}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#041954] hover:bg-[#092C92] rounded-xl ml-auto">
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#0F172A] hover:bg-[#1E293B] rounded-xl transition-all shadow-sm cursor-pointer ml-auto">
             <Plus className="w-4 h-4" />
             Registrar compra
           </button>
@@ -232,32 +250,54 @@ const ComprasTab: React.FC = () => {
       )}
 
       {/* Modal nueva compra */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <h2 className="text-base font-bold text-gray-900">Registrar Compra</h2>
-              <button onClick={() => setModalOpen(false)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400"><X className="w-5 h-5" /></button>
+      {modalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-slate-50/80 sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#041954]/10 rounded-xl flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5 text-[#041954]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Registrar Compra</h2>
+                  <p className="text-xs text-gray-500">Ingreso de mercadería y actualización de stock</p>
+                </div>
+              </div>
+              <button onClick={() => setModalOpen(false)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Proveedor *</label>
-                  <select value={idProv} onChange={e => setIdProv(Number(e.target.value))} className={inputCls}>
-                    <option value="">Selecciona...</option>
+                  <select
+                    value={idProv}
+                    onChange={e => {
+                      setIdProv(e.target.value === "" ? "" : Number(e.target.value));
+                      if (formError) setFormError(null);
+                    }}
+                    className={inputCls}
+                  >
+                    <option value="">Selecciona un proveedor...</option>
                     {proveedores.map(p => <option key={p.id_proveedor} value={p.id_proveedor}>{p.nombre}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">N° de factura</label>
-                  <input value={numFactura} onChange={e => setNumFactura(e.target.value)} placeholder="Opcional" className={inputCls} />
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">N° de Factura de Compra</label>
+                  <input
+                    value={numFactura}
+                    onChange={e => setNumFactura(e.target.value)}
+                    placeholder="Ej. FAC-2026-9812 (opcional)"
+                    className={inputCls}
+                  />
                 </div>
               </div>
 
               {/* Líneas de productos */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-gray-700">Productos</label>
+                  <label className="text-xs font-semibold text-gray-700">Productos a Comprar *</label>
                   <button type="button" onClick={addLinea}
                     className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline">
                     <Plus className="w-3.5 h-3.5" /> Agregar línea
@@ -265,18 +305,18 @@ const ComprasTab: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   {lineas.map((ln, i) => (
-                    <div key={i} className="grid grid-cols-[1fr_80px_90px_32px] gap-2 items-center">
+                    <div key={i} className="grid grid-cols-[1fr_90px_100px_32px] gap-2 items-center">
                       <select value={ln.id_producto} onChange={e => updateLinea(i, "id_producto", Number(e.target.value))}
                         className={inputCls}>
-                        <option value={0}>Selecciona producto</option>
+                        <option value={0}>Selecciona producto...</option>
                         {productos.map(p => <option key={p.id_producto} value={p.id_producto}>{p.codigo} — {p.descripcion}</option>)}
                       </select>
-                      <input type="number" min={1} value={ln.cantidad} onChange={e => updateLinea(i, "cantidad", Number(e.target.value))}
+                      <input type="number" min={1} value={ln.cantidad} onChange={e => updateLinea(i, "cantidad", Math.max(1, parseInt(e.target.value, 10) || 1))}
                         placeholder="Cant." className={inputCls} />
-                      <input type="number" min={0} step="0.01" value={ln.precio_unit} onChange={e => updateLinea(i, "precio_unit", parseFloat(e.target.value) || 0)}
-                        placeholder="Precio" className={inputCls} />
+                      <input type="number" min={0} step="0.01" value={ln.precio_unit} onChange={e => updateLinea(i, "precio_unit", Math.max(0, parseFloat(e.target.value) || 0))}
+                        placeholder="Precio Q" className={inputCls} />
                       <button type="button" onClick={() => removeLinea(i)} disabled={lineas.length === 1}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-30">
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-30 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -286,35 +326,51 @@ const ComprasTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Observaciones</label>
-                <input value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Opcional" className={inputCls} />
+                <input value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Ej. Entrega programada en bodega central" className={inputCls} />
               </div>
 
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-2xl">
-                <span className="text-sm font-semibold text-gray-700">Total de compra</span>
-                <span className="text-lg font-bold text-[#041954]">Q {subtotal.toFixed(2)}</span>
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">
+                <span className="text-sm font-semibold text-gray-700">Total Estimado de Compra</span>
+                <span className="text-lg font-bold text-[#0F172A]">Q {subtotal.toFixed(2)}</span>
               </div>
 
-              {formError && <p className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">{formError}</p>}
+              {formError && (
+                <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>{formError}</span>
+                </div>
+              )}
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-                <button onClick={() => setModalOpen(false)} className="px-5 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
-                <button onClick={handleSave} disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-[#041954] hover:bg-[#092C92] rounded-xl disabled:opacity-70">
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium px-4 py-2 rounded-xl transition-all cursor-pointer text-xs"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-2 bg-[#0F172A] text-white hover:bg-[#1E293B] font-medium px-5 py-2 rounded-xl transition-all shadow-sm disabled:opacity-70 cursor-pointer text-xs"
+                >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {saving ? "Guardando..." : "Registrar compra"}
+                  <span>{saving ? "Guardando..." : "Registrar Compra"}</span>
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Detalle de compra */}
-      {detalle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <h2 className="text-base font-bold text-gray-900">Compra #{detalle.id_compra}</h2>
+      {detalle && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-gray-100">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-slate-50/80">
+              <h2 className="text-base font-bold text-gray-900">Detalle de Compra #{detalle.id_compra}</h2>
               <button onClick={() => setDetalle(null)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
@@ -334,7 +390,7 @@ const ComprasTab: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs font-semibold text-gray-700 mb-2">Productos</p>
-                <div className="space-y-1">
+                <div className="space-y-1 max-h-48 overflow-y-auto">
                   {detalle.detalles?.map(d => (
                     <div key={d.id_detalle_compra} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-xl text-xs">
                       <span className="font-medium">{d.producto?.descripcion}</span>
@@ -343,13 +399,23 @@ const ComprasTab: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex justify-between items-center px-4 py-3 bg-gray-50 rounded-2xl">
+              <div className="flex justify-between items-center px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">
                 <span className="text-sm font-semibold text-gray-700">Total</span>
-                <span className="text-lg font-bold text-[#041954]">Q {Number(detalle.total || 0).toFixed(2)}</span>
+                <span className="text-lg font-bold text-[#0F172A]">Q {Number(detalle.total || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDetalle(null)}
+                  className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium px-4 py-2 rounded-xl transition-all cursor-pointer text-xs"
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

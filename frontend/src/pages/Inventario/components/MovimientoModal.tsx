@@ -157,20 +157,25 @@ const MovimientoModal: React.FC<MovimientoModalProps> = ({ producto, onClose, on
             <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-            <button type="button" onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+          <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium px-4 py-2 rounded-xl transition-all cursor-pointer text-xs"
+            >
               Cancelar
             </button>
-            <button type="submit" disabled={loading}
-              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors disabled:opacity-70 cursor-pointer ${
+            <button
+              type="submit"
+              disabled={loading}
+              className={`flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white rounded-xl transition-all shadow-sm disabled:opacity-70 cursor-pointer ${
                 tipo === "ENTRADA" ? "bg-green-600 hover:bg-green-700" :
                 tipo === "SALIDA"  ? "bg-red-600   hover:bg-red-700"   :
-                "bg-blue-600 hover:bg-blue-700"
+                "bg-[#0F172A] hover:bg-[#1E293B]"
               }`}
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {loading ? "Registrando..." : "Registrar"}
+              <span>{loading ? "Registrando..." : "Registrar Movimiento"}</span>
             </button>
           </div>
         </form>

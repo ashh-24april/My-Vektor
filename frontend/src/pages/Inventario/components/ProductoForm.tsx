@@ -69,6 +69,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
   const [generatingSKU, setGeneratingSKU]   = useState(false);
   const [manualCodeEdit, setManualCodeEdit] = useState(false);
   const [error, setError]                   = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors]       = useState<Record<string, string>>({});
 
   useEffect(() => {
     Promise.all([getCategorias(), getProveedores()]).then(([cats, provs]) => {
@@ -234,17 +235,44 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.codigo.trim()) return setError("El código SKU es requerido.");
-    if (!form.descripcion.trim()) return setError("La descripción es requerida.");
-    if (!form.id_categoria) return setError("La categoría es requerida.");
+    const errors: Record<string, string> = {};
+
+    if (!form.codigo.trim()) {
+      errors.codigo = "El código SKU es requerido.";
+    }
+    if (!form.descripcion.trim() || form.descripcion.trim().length < 3) {
+      errors.descripcion = "La descripción debe tener al menos 3 caracteres.";
+    }
+    if (!form.id_categoria || form.id_categoria === 0) {
+      errors.id_categoria = "La categoría es requerida.";
+    }
+
+    // Validación estricta de Stock Inicial
+    if (form.stock === "" || form.stock === undefined || form.stock === null) {
+      errors.stock = "El stock inicial es obligatorio.";
+    } else if (!/^\d+$/.test(String(form.stock).trim())) {
+      errors.stock = "El stock debe ser un número entero positivo (≥ 0).";
+    }
+
+    // Validación estricta de Stock Mínimo
+    if (form.stock_minimo === "" || form.stock_minimo === undefined || form.stock_minimo === null) {
+      errors.stock_minimo = "El stock mínimo es obligatorio.";
+    } else if (!/^\d+$/.test(String(form.stock_minimo).trim())) {
+      errors.stock_minimo = "El stock mínimo debe ser un número entero positivo (≥ 0).";
+    }
 
     // Validación estricta de impedimento de pérdidas
     if (precioCompraNum > 0 && precioVentaNum < (pisoMinimoSeguridad - 0.009)) {
-      return setError(
-        `El precio de venta (Q${precioVentaNum.toFixed(2)}) no puede ser inferior al costo más el 10% de margen mínimo de seguridad (Mínimo permitido: Q${pisoMinimoSeguridad.toFixed(2)}).`
-      );
+      errors.precio_venta = `El precio de venta (Q${precioVentaNum.toFixed(2)}) no puede ser inferior al costo + 10% margen mínimo (Q${pisoMinimoSeguridad.toFixed(2)}).`;
     }
 
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError("Por favor corrige los errores resaltados en el formulario.");
+      return;
+    }
+
+    setFieldErrors({});
     setLoading(true);
     setError(null);
     try {
@@ -316,13 +344,14 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                   value={form.id_categoria}
                   onChange={handleCategoriaChange}
                   disabled={!canEdit}
-                  className={inputCls}
+                  className={`${inputCls} ${fieldErrors.id_categoria ? "border-rose-400 ring-1 ring-rose-400" : ""}`}
                 >
                   <option value={0}>Selecciona una categoría</option>
                   {categorias.map(c => (
                     <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
                   ))}
                 </select>
+                {fieldErrors.id_categoria && <p className="text-rose-500 text-xs mt-1">{fieldErrors.id_categoria}</p>}
               </div>
 
               {/* Código SKU (Autogenerado según categoría y secuencia desde 100) */}
@@ -349,7 +378,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                     onChange={handleChange}
                     disabled={(!canEdit || (!manualCodeEdit && !isEdit)) && !manualCodeEdit}
                     placeholder={generatingSKU ? "Generando SKU..." : "Ej. FIL-100"}
-                    className={`${inputCls} uppercase font-mono font-bold ${!manualCodeEdit && !isEdit ? "bg-blue-50/50 text-blue-900 border-blue-200" : ""}`}
+                    className={`${inputCls} uppercase font-mono font-bold ${!manualCodeEdit && !isEdit ? "bg-blue-50/50 text-blue-900 border-blue-200" : ""} ${fieldErrors.codigo ? "border-rose-400 ring-1 ring-rose-400" : ""}`}
                   />
                   {generatingSKU && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-blue-600">
@@ -363,6 +392,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                     </span>
                   )}
                 </div>
+                {fieldErrors.codigo && <p className="text-rose-500 text-xs mt-1">{fieldErrors.codigo}</p>}
               </div>
             </div>
           </div>
@@ -376,8 +406,9 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
               onChange={handleChange}
               disabled={!canEdit}
               placeholder="Ej. Filtro de Aceite Primario Heavy Duty para Cabezal Freightliner"
-              className={inputCls}
+              className={`${inputCls} ${fieldErrors.descripcion ? "border-rose-400 ring-1 ring-rose-400" : ""}`}
             />
+            {fieldErrors.descripcion && <p className="text-rose-500 text-xs mt-1">{fieldErrors.descripcion}</p>}
           </div>
 
           {/* Sección de Compra y Proveedor: Proveedor + Número de Factura */}
@@ -452,7 +483,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isEdit ? "Stock Actual" : "Stock Inicial"}
+                {isEdit ? "Stock Actual" : "Stock Inicial *"}
               </label>
               <input
                 type="text"
@@ -464,12 +495,13 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                 onBlur={() => handleNumericBlur("stock", "0")}
                 disabled={isEdit || !canEdit}
                 placeholder="0"
-                className={`${inputCls} ${isEdit ? "bg-gray-50 text-gray-400" : ""}`}
+                className={`${inputCls} ${isEdit ? "bg-gray-50 text-gray-400" : ""} ${fieldErrors.stock ? "border-rose-400 ring-1 ring-rose-400" : ""}`}
               />
+              {fieldErrors.stock && <p className="text-rose-500 text-xs mt-1">{fieldErrors.stock}</p>}
               {isEdit && <p className="text-[11px] text-gray-400 mt-1">Usa la opción "Movimiento" para registrar entradas/salidas.</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Stock Mínimo (Alerta de Reabastecimiento)</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Stock Mínimo (Alerta de Reabastecimiento) *</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -480,8 +512,9 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
                 onBlur={() => handleNumericBlur("stock_minimo", "0")}
                 disabled={!canEdit}
                 placeholder="0"
-                className={inputCls}
+                className={`${inputCls} ${fieldErrors.stock_minimo ? "border-rose-400 ring-1 ring-rose-400" : ""}`}
               />
+              {fieldErrors.stock_minimo && <p className="text-rose-500 text-xs mt-1">{fieldErrors.stock_minimo}</p>}
             </div>
           </div>
 
@@ -642,7 +675,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+              className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium px-4 py-2 rounded-xl transition-all cursor-pointer text-xs"
             >
               Cancelar
             </button>
@@ -650,7 +683,7 @@ const ProductoForm: React.FC<ProductoFormProps> = ({ producto, onClose, onSucces
               <button
                 type="submit"
                 disabled={loading || esPrecioVentaInvalido}
-                className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#041954] hover:bg-[#092C92] rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="flex items-center gap-2 bg-[#0F172A] text-white hover:bg-[#1E293B] font-medium px-5 py-2 rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-xs"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 <span>{loading ? "Guardando..." : isEdit ? "Guardar Cambios" : "Crear Producto"}</span>

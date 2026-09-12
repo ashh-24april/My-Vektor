@@ -23,6 +23,10 @@ export interface AuthenticatedRequest extends Request {
     id: number;
     email: string;
     rol: string; // Rol tal y como viene en la base de datos
+    id_usuario?: number;
+    nombre?: string;
+    usuario?: string;
+    correo?: string;
   };
 }
 

@@ -46,6 +46,7 @@ model Usuario {
   viajes                Viaje[]
   gastos                Gasto[]
   ventas                Venta[]
+  transacciones         TransaccionFinanzas[]
   notificaciones        Notificacion[]
   refresh_tokens        RefreshToken[]
   reset_tokens          PasswordResetToken[]
@@ -105,28 +106,38 @@ model Auditoria {
 }
 
 model Vehiculo {
-  id_vehiculo      Int                 @id @default(autoincrement())
-  placa            String              @unique @db.VarChar(20)
-  marca            String              @db.VarChar(80)
-  modelo           String              @db.VarChar(80)
-  anio             Int
-  tipo             String?             @db.VarChar(50)
-  color            String?             @db.VarChar(30)
-  num_motor        String?             @db.VarChar(50)
-  num_chasis       String?             @db.VarChar(50)
-  capacidad_carga  Decimal?            @db.Decimal(10, 2)
-  kilometraje      Int                 @default(0)
-  rendimiento_km_l Decimal?            @db.Decimal(5, 2)
-  estado           String              @default("Disponible") @db.VarChar(30)
-  activo           Boolean             @default(true)
-  foto_url         String?
-  created_at       DateTime            @default(now()) @db.Timestamp(6)
-  updated_at       DateTime            @default(now()) @db.Timestamp(6)
-  documentos       DocumentoVehiculo[]
-  ordenes_servicio OrdenServicio[]
-  viajes           Viaje[]
-  ventas           Venta[]
+  id_vehiculo        Int                 @id @default(autoincrement())
+  placa              String              @unique @db.VarChar(20)
+  marca              String              @db.VarChar(80)
+  modelo             String              @db.VarChar(80)
+  anio               Int
+  tipo               String?             @db.VarChar(50)
+  color              String?             @db.VarChar(30)
+  num_motor          String?             @db.VarChar(50)
+  num_chasis         String?             @db.VarChar(50)
+  capacidad_carga    Decimal?            @db.Decimal(10, 2)
+  kilometraje        Int                 @default(0)
+  horometro          Int?                @default(0)
+  rendimiento_km_l   Decimal?            @db.Decimal(5, 2)
+  estado             String              @default("Disponible") @db.VarChar(30)
+  venc_circulacion   DateTime?           @db.Date
+  venc_seguro        DateTime?           @db.Date
+  venc_revision      DateTime?           @db.Date
+  id_piloto_asignado Int?
+  activo             Boolean             @default(true)
+  foto_url           String?
+  created_at         DateTime            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime            @default(now()) @db.Timestamp(6)
+  piloto_asignado    Piloto?             @relation("VehiculoPilotoAsignado", fields: [id_piloto_asignado], references: [id_piloto])
+  documentos         DocumentoVehiculo[]
+  ordenes_servicio   OrdenServicio[]
+  viajes             Viaje[]
+  ventas             Venta[]
+  transacciones      TransaccionFinanzas[]
 
+  @@index([placa], map: "idx_vehiculo_placa")
+  @@index([estado], map: "idx_vehiculo_estado")
+  @@index([id_piloto_asignado], map: "idx_vehiculo_piloto_asig")
   @@map("vehiculo")
 }
 
@@ -148,28 +159,31 @@ model DocumentoVehiculo {
 }
 
 model Piloto {
-  id_piloto      Int      @id @default(autoincrement())
-  nombre         String   @db.VarChar(100)
-  apellido       String   @db.VarChar(100)
-  dpi            String   @unique @db.VarChar(20)
-  telefono       String?  @db.VarChar(20)
-  correo         String?  @db.VarChar(150)
-  num_licencia   String   @unique @db.VarChar(30)
-  tipo_licencia  String   @db.VarChar(10)
-  venc_licencia  DateTime @db.Date
-  alerta_enviada Boolean  @default(false)
-  disponible     Boolean  @default(true)
-  activo         Boolean  @default(true)
-  foto_url       String?
-  foto_dpi_url   String?
-  foto_lic_url   String?
-  created_at     DateTime        @default(now()) @db.Timestamp(6)
-  updated_at     DateTime        @default(now()) @db.Timestamp(6)
-  viajes         Viaje[]
-  ordenes_servicio OrdenServicio[]
+  id_piloto           Int             @id @default(autoincrement())
+  nombre              String          @db.VarChar(100)
+  apellido            String          @db.VarChar(100)
+  dpi                 String          @unique @db.VarChar(20)
+  telefono            String?         @db.VarChar(20)
+  correo              String?         @db.VarChar(150)
+  num_licencia        String          @unique @db.VarChar(30)
+  tipo_licencia       String          @db.VarChar(10)
+  venc_licencia       DateTime        @db.Date
+  estado              String          @default("Disponible") @db.VarChar(30)
+  alerta_enviada      Boolean         @default(false)
+  disponible          Boolean         @default(true)
+  activo              Boolean         @default(true)
+  foto_url            String?
+  foto_dpi_url        String?
+  foto_lic_url        String?
+  created_at          DateTime        @default(now()) @db.Timestamp(6)
+  updated_at          DateTime        @default(now()) @db.Timestamp(6)
+  vehiculos_asignados Vehiculo[]      @relation("VehiculoPilotoAsignado")
+  viajes              Viaje[]
+  ordenes_servicio    OrdenServicio[]
 
   @@index([num_licencia], map: "idx_piloto_licencia")
   @@index([venc_licencia], map: "idx_piloto_vencimiento")
+  @@index([estado], map: "idx_piloto_estado")
   @@map("piloto")
 }
 
@@ -204,6 +218,7 @@ model Cliente {
   ordenes_servicio OrdenServicio[]
   viajes      Viaje[]
   ventas      Venta[]
+  transacciones TransaccionFinanzas[]
 
   @@map("cliente")
 }
@@ -215,6 +230,7 @@ model Proveedor {
   telefono      String?             @db.VarChar(20)
   correo        String?             @db.VarChar(150)
   direccion     String?
+  sitio_web     String?             @db.VarChar(255)
   tipo_producto String?
   activo        Boolean             @default(true)
   created_at    DateTime            @default(now()) @db.Timestamp(6)
@@ -222,6 +238,7 @@ model Proveedor {
   contactos     ContactoProveedor[]
   productos     Producto[]
   compras       Compra[]
+  transacciones TransaccionFinanzas[]
 
   @@map("proveedor")
 }
@@ -314,6 +331,7 @@ model Compra {
   proveedor     Proveedor       @relation(fields: [id_proveedor], references: [id_proveedor])
   usuario       Usuario         @relation(fields: [id_usuario], references: [id_usuario])
   detalles      DetalleCompra[]
+  transacciones TransaccionFinanzas[]
 
   @@index([id_proveedor], map: "idx_compra_proveedor")
   @@map("compra")
@@ -386,32 +404,48 @@ model OrdenRepuesto {
 }
 
 model Viaje {
-  id_viaje          Int      @id @default(autoincrement())
-  id_vehiculo       Int
-  id_piloto         Int
-  id_cliente        Int?
-  id_usuario        Int
-  origen            String   @db.VarChar(150)
-  destino          String   @db.VarChar(150)
-  descripcion_carga String?
-  fecha_salida      DateTime @db.Date
-  fecha_llegada     DateTime? @db.Date
-  km_estimado       Decimal? @db.Decimal(10, 2)
-  km_real           Decimal? @db.Decimal(10, 2)
-  comb_estimado     Decimal? @db.Decimal(10, 2)
-  comb_real         Decimal? @db.Decimal(10, 2)
-  ingreso_total     Decimal  @default(0) @db.Decimal(10, 2)
-  costo_total       Decimal  @default(0) @db.Decimal(10, 2)
-  estado            String   @default("Programado") @db.VarChar(30)
-  observaciones     String?
-  created_at        DateTime @default(now()) @db.Timestamp(6)
-  updated_at        DateTime @default(now()) @db.Timestamp(6)
-  vehiculo          Vehiculo @relation(fields: [id_vehiculo], references: [id_vehiculo])
-  piloto            Piloto   @relation(fields: [id_piloto], references: [id_piloto])
-  cliente           Cliente? @relation(fields: [id_cliente], references: [id_cliente])
-  usuario           Usuario  @relation(fields: [id_usuario], references: [id_usuario])
-  gastos            Gasto[]
+  id_viaje               Int       @id @default(autoincrement())
+  codigo_viaje           String?   @unique @db.VarChar(50)
+  id_vehiculo            Int
+  id_remolque            Int?
+  id_piloto              Int
+  id_cliente             Int?
+  id_usuario             Int
+  tipo_carga             String?   @default("Carga Seca") @db.VarChar(80)
+  origen                 String    @db.VarChar(150)
+  destino                String    @db.VarChar(150)
+  escala_puntos          String?
+  descripcion_carga      String?
+  monto_flete            Decimal   @default(0) @db.Decimal(10, 2)
+  anticipo_viaticos      Decimal   @default(0) @db.Decimal(10, 2)
+  fecha_salida           DateTime  @db.Date
+  fecha_estimada_llegada DateTime? @db.Date
+  fecha_llegada_real     DateTime? @db.Timestamp(6)
+  fecha_llegada          DateTime? @db.Date
+  km_inicial             Int?
+  km_final               Int?
+  km_estimado            Decimal?  @db.Decimal(10, 2)
+  km_real                Decimal?  @db.Decimal(10, 2)
+  galones_combustible    Decimal?  @db.Decimal(10, 2)
+  costo_combustible      Decimal?  @db.Decimal(10, 2)
+  comb_estimado          Decimal?  @db.Decimal(10, 2)
+  comb_real              Decimal?  @db.Decimal(10, 2)
+  rendimiento_calculado  Decimal?  @db.Decimal(6, 2)
+  ingreso_total          Decimal   @default(0) @db.Decimal(10, 2)
+  costo_total            Decimal   @default(0) @db.Decimal(10, 2)
+  estado                 String    @default("Programado") @db.VarChar(30)
+  observaciones          String?
+  activo                 Boolean   @default(true)
+  created_at             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at             DateTime  @default(now()) @db.Timestamp(6)
+  vehiculo               Vehiculo  @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  piloto                 Piloto    @relation(fields: [id_piloto], references: [id_piloto])
+  cliente                Cliente?  @relation(fields: [id_cliente], references: [id_cliente])
+  usuario                Usuario   @relation(fields: [id_usuario], references: [id_usuario])
+  gastos                 Gasto[]
+  transacciones          TransaccionFinanzas[]
 
+  @@index([codigo_viaje], map: "idx_viaje_codigo")
   @@index([id_vehiculo], map: "idx_viaje_vehiculo")
   @@index([id_piloto], map: "idx_viaje_piloto")
   @@index([estado], map: "idx_viaje_estado")
@@ -420,19 +454,24 @@ model Viaje {
 }
 
 model Gasto {
-  id_gasto    Int      @id @default(autoincrement())
-  id_viaje    Int?
-  id_usuario  Int
-  concepto    String   @db.VarChar(150)
-  tipo        String   @default("Operativo") @db.VarChar(50)
-  monto       Decimal  @db.Decimal(10, 2)
-  comprobante String?
-  fecha       DateTime @default(now()) @db.Date
-  created_at  DateTime @default(now()) @db.Timestamp(6)
-  viaje       Viaje?   @relation(fields: [id_viaje], references: [id_viaje])
-  usuario     Usuario  @relation(fields: [id_usuario], references: [id_usuario])
+  id_gasto        Int      @id @default(autoincrement())
+  id_viaje        Int?
+  id_usuario      Int
+  categoria       String?  @db.VarChar(50)
+  concepto        String   @db.VarChar(150)
+  tipo            String   @default("Operativo") @db.VarChar(50)
+  monto           Decimal  @db.Decimal(10, 2)
+  galones         Decimal? @db.Decimal(8, 2)
+  odometro_km     Int?
+  num_comprobante String?  @db.VarChar(80)
+  comprobante     String?
+  fecha           DateTime @default(now()) @db.Date
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  viaje           Viaje?   @relation(fields: [id_viaje], references: [id_viaje])
+  usuario         Usuario  @relation(fields: [id_usuario], references: [id_usuario])
 
   @@index([id_viaje], map: "idx_gasto_viaje")
+  @@index([categoria], map: "idx_gasto_categoria")
   @@map("gasto")
 }
 
@@ -467,6 +506,7 @@ model Venta {
   usuario           Usuario        @relation(fields: [id_usuario], references: [id_usuario])
   vehiculo          Vehiculo?      @relation(fields: [id_vehiculo], references: [id_vehiculo])
   detalles          DetalleVenta[]
+  transacciones     TransaccionFinanzas[]
 
   @@index([id_cliente], map: "idx_venta_cliente")
   @@index([fecha], map: "idx_venta_fecha")
@@ -534,3 +574,49 @@ model PasswordResetToken {
 
   @@map("password_reset_token")
 }
+
+model TransaccionFinanzas {
+  id_transaccion     Int       @id @default(autoincrement())
+  codigo_transaccion String?   @unique @db.VarChar(50)
+  tipo               String    @db.VarChar(20)
+  categoria          String    @db.VarChar(80)
+  concepto           String    @db.VarChar(200)
+  monto              Decimal   @default(0) @db.Decimal(10, 2)
+  monto_pagado       Decimal   @default(0) @db.Decimal(10, 2)
+  estado             String    @default("Pendiente") @db.VarChar(30)
+  fecha              DateTime  @default(now()) @db.Date
+  fecha_vencimiento  DateTime? @db.Date
+  fecha_pago         DateTime? @db.Timestamp(6)
+  metodo_pago        String?   @db.VarChar(50)
+  num_comprobante    String?   @db.VarChar(80)
+  id_cliente         Int?
+  id_proveedor       Int?
+  id_vehiculo        Int?
+  id_viaje           Int?
+  id_venta           Int?
+  id_compra          Int?
+  id_usuario         Int
+  observaciones      String?
+  activo             Boolean   @default(true)
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @default(now()) @db.Timestamp(6)
+
+  cliente            Cliente?   @relation(fields: [id_cliente], references: [id_cliente])
+  proveedor          Proveedor? @relation(fields: [id_proveedor], references: [id_proveedor])
+  vehiculo           Vehiculo?  @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  viaje              Viaje?     @relation(fields: [id_viaje], references: [id_viaje])
+  venta              Venta?     @relation(fields: [id_venta], references: [id_venta])
+  compra             Compra?    @relation(fields: [id_compra], references: [id_compra])
+  usuario            Usuario    @relation(fields: [id_usuario], references: [id_usuario])
+
+  @@index([tipo], map: "idx_transaccion_tipo")
+  @@index([categoria], map: "idx_transaccion_categoria")
+  @@index([estado], map: "idx_transaccion_estado")
+  @@index([fecha], map: "idx_transaccion_fecha")
+  @@index([id_vehiculo], map: "idx_transaccion_vehiculo")
+  @@index([id_viaje], map: "idx_transaccion_viaje")
+  @@index([id_cliente], map: "idx_transaccion_cliente")
+  @@index([id_proveedor], map: "idx_transaccion_proveedor")
+  @@map("transaccion_finanzas")
+}
+

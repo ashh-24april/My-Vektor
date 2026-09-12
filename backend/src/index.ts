@@ -12,6 +12,9 @@ import mecanicaRoutes from "./routes/mecanica";
 import dashboardRoutes from "./routes/dashboard";
 import notificacionesRoutes from "./routes/notificaciones";
 import auditoriaRoutes from "./routes/auditoria";
+import operacionesRoutes from "./routes/operaciones";
+import viajesRoutes from "./routes/viajes";
+import finanzasRoutes from "./routes/finanzas";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -62,6 +65,9 @@ app.use("/api/roles", rolesRoutes);
 app.use("/api/inventario", inventarioRoutes);
 app.use("/api/ventas", ventasRoutes);
 app.use("/api/mecanica", mecanicaRoutes);
+app.use("/api/operaciones", operacionesRoutes);
+app.use("/api/viajes", viajesRoutes);
+app.use("/api/finanzas", finanzasRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/auditoria", auditoriaRoutes);

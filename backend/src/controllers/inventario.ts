@@ -83,7 +83,7 @@ export const getProveedores = async (req: Request, res: Response) => {
 };
 
 export const createProveedor = async (req: Request, res: Response) => {
-  const { nombre, nit, telefono, correo, direccion, tipo_producto, contactos = [] } = req.body;
+  const { nombre, nit, telefono, correo, direccion, sitio_web, tipo_producto, contactos = [] } = req.body;
   if (!nombre?.trim()) return res.status(400).json({ error: "El nombre es requerido." });
   try {
     const prov = await prisma.proveedor.create({
@@ -93,6 +93,7 @@ export const createProveedor = async (req: Request, res: Response) => {
         telefono: telefono?.trim() || null,
         correo: correo?.trim() || null,
         direccion: direccion?.trim() || null,
+        sitio_web: sitio_web?.trim() || null,
         tipo_producto: tipo_producto?.trim() || null,
         contactos: contactos.length > 0 ? {
           create: contactos.map((c: any) => ({
@@ -114,7 +115,7 @@ export const createProveedor = async (req: Request, res: Response) => {
 
 export const updateProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { nombre, nit, telefono, correo, direccion, tipo_producto, activo } = req.body;
+  const { nombre, nit, telefono, correo, direccion, sitio_web, tipo_producto, activo } = req.body;
   try {
     const prov = await prisma.proveedor.update({
       where: { id_proveedor: id },
@@ -124,6 +125,7 @@ export const updateProveedor = async (req: Request, res: Response) => {
         ...(telefono !== undefined && { telefono: telefono?.trim() || null }),
         ...(correo !== undefined && { correo: correo?.trim() || null }),
         ...(direccion !== undefined && { direccion: direccion?.trim() || null }),
+        ...(sitio_web !== undefined && { sitio_web: sitio_web?.trim() || null }),
         ...(tipo_producto !== undefined && { tipo_producto: tipo_producto?.trim() || null }),
         ...(activo !== undefined && { activo }),
       },
@@ -153,9 +155,9 @@ export const deleteProveedor = async (req: Request, res: Response) => {
 
 export const getProductos = async (req: Request, res: Response) => {
   try {
-    const { q, categoria, stock_bajo, activo = "true", page = "1", limit = "50" } = req.query;
+    const { q, categoria, stock_bajo, activo = "true", page = "1", limit = "100" } = req.query;
     const pageNum = Math.max(1, parseInt(page as string) || 1);
-    const limitNum = Math.min(200, parseInt(limit as string) || 50);
+    const limitNum = Math.min(1000, parseInt(limit as string) || 100);
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};

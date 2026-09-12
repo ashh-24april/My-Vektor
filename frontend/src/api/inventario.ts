@@ -16,6 +16,7 @@ export interface Proveedor {
   telefono?: string | null;
   correo?: string | null;
   direccion?: string | null;
+  sitio_web?: string | null;
   tipo_producto?: string | null;
   activo: boolean;
   contactos?: ContactoProveedor[];

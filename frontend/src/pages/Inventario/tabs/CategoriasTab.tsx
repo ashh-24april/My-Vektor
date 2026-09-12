@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Tag, Package, Loader2, RefreshCw } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, Pencil, Trash2, Tag, Package, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import {
   getCategorias, createCategoria, updateCategoria, deleteCategoria,
   type Categoria,
@@ -42,24 +43,51 @@ const CategoriasTab: React.FC = () => {
 
   useEffect(() => { load(); }, []);
 
-  const openNew = () => { setEditId(null); setNombre(""); setDesc(""); setFormError(null); setShowForm(true); };
-  const openEdit = (c: Categoria) => { setEditId(c.id_categoria); setNombre(c.nombre); setDesc(c.descripcion || ""); setFormError(null); setShowForm(true); };
-  const cancelForm = () => { setShowForm(false); setEditId(null); setNombre(""); setDesc(""); };
+  const openNew = () => {
+    setEditId(null);
+    setNombre("");
+    setDesc("");
+    setFormError(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (c: Categoria) => {
+    setEditId(c.id_categoria);
+    setNombre(c.nombre);
+    setDesc(c.descripcion || "");
+    setFormError(null);
+    setShowForm(true);
+  };
+
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditId(null);
+    setNombre("");
+    setDesc("");
+    setFormError(null);
+  };
 
   const handleSave = async () => {
-    if (!nombre.trim()) return setFormError("El nombre es requerido.");
+    const cleanNombre = nombre.trim();
+    if (!cleanNombre || cleanNombre.length < 3) {
+      return setFormError("El nombre de la categoría es obligatorio (mínimo 3 caracteres).");
+    }
+    if (/^\d+$/.test(cleanNombre)) {
+      return setFormError("El nombre de la categoría no puede contener únicamente números.");
+    }
+
     setSaving(true);
     setFormError(null);
     try {
       if (editId) {
-        await updateCategoria(editId, { nombre, descripcion: desc });
+        await updateCategoria(editId, { nombre: cleanNombre, descripcion: desc.trim() || undefined });
       } else {
-        await createCategoria({ nombre, descripcion: desc });
+        await createCategoria({ nombre: cleanNombre, descripcion: desc.trim() || undefined });
       }
       cancelForm();
       load();
     } catch (err: any) {
-      setFormError(err?.response?.data?.error || "Error al guardar.");
+      setFormError(err?.response?.data?.error || "Error al guardar la categoría.");
     } finally {
       setSaving(false);
     }
@@ -96,7 +124,7 @@ const CategoriasTab: React.FC = () => {
         </p>
         {canCreate && (
           <button onClick={openNew}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#041954] hover:bg-[#092C92] rounded-xl transition-colors">
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#0F172A] hover:bg-[#1E293B] rounded-xl transition-all shadow-sm cursor-pointer">
             <Plus className="w-4 h-4" />
             Nueva categoría
           </button>
@@ -105,28 +133,58 @@ const CategoriasTab: React.FC = () => {
 
       {/* Formulario inline */}
       {showForm && (
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-blue-800">{editId ? "Editar categoría" : "Nueva categoría"}</p>
-          <input
-            value={nombre} onChange={e => setNombre(e.target.value)}
-            placeholder="Nombre de la categoría *"
-            className="w-full px-3 py-2 text-sm rounded-xl border border-blue-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-          />
-          <input
-            value={desc} onChange={e => setDesc(e.target.value)}
-            placeholder="Descripción (opcional)"
-            className="w-full px-3 py-2 text-sm rounded-xl border border-blue-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-          />
-          {formError && <p className="text-xs text-red-600">{formError}</p>}
-          <div className="flex gap-2 justify-end">
-            <button onClick={cancelForm}
-              className="px-4 py-2 text-xs font-medium border border-gray-200 rounded-xl bg-white hover:bg-gray-50">
+        <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-5 space-y-3.5 animate-fade-in shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-bold text-blue-950">{editId ? "Editar Categoría" : "Nueva Categoría"}</p>
+            <span className="text-[11px] text-blue-700 font-medium">Campos marcados con * son obligatorios</span>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre de la categoría *</label>
+            <input
+              value={nombre}
+              onChange={e => {
+                setNombre(e.target.value);
+                if (formError) setFormError(null);
+              }}
+              placeholder="Ej. Filtros de Aceite, Frenos y Tambores"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Descripción (Opcional)</label>
+            <input
+              value={desc}
+              onChange={e => setDesc(e.target.value)}
+              placeholder="Descripción breve de los productos que pertenecen a este grupo"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            />
+          </div>
+
+          {formError && (
+            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end pt-1">
+            <button
+              type="button"
+              onClick={cancelForm}
+              className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium px-4 py-2 rounded-xl transition-all cursor-pointer text-xs"
+            >
               Cancelar
             </button>
-            <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#041954] hover:bg-[#092C92] rounded-xl disabled:opacity-70">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#0F172A] hover:bg-[#1E293B] rounded-xl transition-all shadow-sm disabled:opacity-70 cursor-pointer"
+            >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              {saving ? "Guardando..." : "Guardar"}
+              <span>{saving ? "Guardando..." : "Guardar"}</span>
             </button>
           </div>
         </div>
@@ -176,9 +234,9 @@ const CategoriasTab: React.FC = () => {
       )}
 
       {/* Confirm delete */}
-      {confirmDel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+      {confirmDel && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-600" />
@@ -190,17 +248,25 @@ const CategoriasTab: React.FC = () => {
             </div>
             <p className="text-sm text-gray-700 mb-5">¿Eliminar <strong>{confirmDel.nombre}</strong>?</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setConfirmDel(null)}
-                className="px-4 py-2 text-sm font-medium border border-gray-200 rounded-xl hover:bg-gray-50">
+              <button
+                type="button"
+                onClick={() => setConfirmDel(null)}
+                className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium px-4 py-2 rounded-xl transition-all cursor-pointer text-xs"
+              >
                 Cancelar
               </button>
-              <button onClick={handleDelete} disabled={deleting}
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-70">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-70 transition-all cursor-pointer"
+              >
                 {deleting ? "Eliminando..." : "Eliminar"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

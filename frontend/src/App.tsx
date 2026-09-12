@@ -17,6 +17,9 @@ import ProfilePage from "./pages/ProfilePage";
 import InventarioPage from "./pages/Inventario/InventarioPage";
 import VentasPage from "./pages/Ventas/VentasPage";
 import MecanicaPage from "./pages/Mecanica/MecanicaPage";
+import OperacionesPage from "./pages/Operaciones/OperacionesPage";
+import ViajesPage from "./pages/Viajes/ViajesPage";
+import FinanzasPage from "./pages/Finanzas/FinanzasPage";
 import DashboardOverview from "./pages/Dashboard/DashboardOverview";
 import AuditoriaPage from "./pages/Auditoria/AuditoriaPage";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -135,7 +138,9 @@ function App() {
                     title="Gestión de Operaciones"
                     subtitle="Control de flota, pilotos y programación de viajes."
                     icon={<Truck className="w-10 h-10 text-primary-light" />}
-                  />
+                  >
+                    <OperacionesPage />
+                  </DashboardShell>
                 </ProtectedRoute>
               }
             />
@@ -188,30 +193,34 @@ function App() {
               }
             />
 
-            {/* Piloto */}
+            {/* Despacho de Viajes y Fletes */}
             <Route
               path="/viajes"
               element={
                 <ProtectedRoute allowedRoles={["piloto", "Piloto", ...ADMIN_MANAGEMENT_ROLES]} requiredModule="Viajes">
                   <DashboardShell
-                    title="Mis Viajes"
-                    subtitle="Viajes asignados, incidentes y documentos de tu unidad."
+                    title="Control de Viajes y Fletes"
+                    subtitle="Despacho logístico de rutas, manifiestos de carga y liquidación de gastos."
                     icon={<Navigation className="w-10 h-10 text-primary-light" />}
-                  />
+                  >
+                    <ViajesPage />
+                  </DashboardShell>
                 </ProtectedRoute>
               }
             />
 
-            {/* Contador */}
+            {/* Contador / Finanzas y Tesorería */}
             <Route
               path="/finanzas"
               element={
                 <ProtectedRoute allowedRoles={["contador", "Contador", ...ADMIN_MANAGEMENT_ROLES]} requiredModule="Finanzas">
                   <DashboardShell
-                    title="Módulo Financiero"
-                    subtitle="Reportes contables, estados financieros y análisis de costos."
+                    title="Control de Finanzas y Tesorería"
+                    subtitle="Flujo de caja en tiempo real, rentabilidad por unidad y recuperación de cartera."
                     icon={<Calculator className="w-10 h-10 text-primary-light" />}
-                  />
+                  >
+                    <FinanzasPage />
+                  </DashboardShell>
                 </ProtectedRoute>
               }
             />

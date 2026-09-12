@@ -95,6 +95,8 @@ const LoginPage = () => {
       const axiosError = error as { response?: { data?: { error?: string }; status?: number } };
       if (axiosError?.response?.status === 429) {
         setServerError("Demasiados intentos. Por favor espera unos minutos e intenta de nuevo.");
+      } else if (axiosError?.response?.data?.error) {
+        setServerError(axiosError.response.data.error);
       } else {
         setServerError("Credenciales inválidas. Verifica tu usuario y contraseña.");
       }
